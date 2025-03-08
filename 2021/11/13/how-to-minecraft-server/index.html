@@ -1,0 +1,382 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>Minecraft 服务端开发指北 | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2021-11-13</div></div></div><div class="container post-header"><h1>Minecraft 服务端开发指北</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#起因：我们想-…"><span class="toc-number">1.</span> <span class="toc-text">起因：我们想 …</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#反编译与反混淆"><span class="toc-number">2.</span> <span class="toc-text">反编译与反混淆</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#避免分发官方代码"><span class="toc-number">3.</span> <span class="toc-text">避免分发官方代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#事件模型"><span class="toc-number">4.</span> <span class="toc-text">事件模型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#实现功能：从类说起"><span class="toc-number">5.</span> <span class="toc-text">实现功能：从类说起</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#反混淆的实现"><span class="toc-number">5.1.</span> <span class="toc-text">反混淆的实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#禅与代码注入技术"><span class="toc-number">5.2.</span> <span class="toc-text">禅与代码注入技术</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#不同的运行时环境：重混淆"><span class="toc-number">6.</span> <span class="toc-text">不同的运行时环境：重混淆</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#混合服务端"><span class="toc-number">7.</span> <span class="toc-text">混合服务端</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展阅读"><span class="toc-number">8.</span> <span class="toc-text">拓展阅读</span></a></li></ol></details></div><div class="container post-content"><p>本文介绍 <a href="https://github.com/IzzelAliz/Arclight" target="_blank" rel="noopener">Arclight</a> 和其他常见 Minecraft 服务端原理及关键技术。</p>
+<p>文章信息密度较高，读者请善用搜索引擎。</p>
+<h2 id="起因：我们想-…"><a href="#起因：我们想-…" class="headerlink" title="起因：我们想 …"></a>起因：我们想 …</h2><p>在 Minecraft 支持多人模式后，玩家们发现了其面向更多用户时存在的不足。这可能是权限管理的缺失，易用性不足，或是缺少一些娱乐性的功能。</p>
+<p>面对这些不足，开发者们自然会想到一件事：改代码，可是 Minecraft 是一款商业程序，并不向用户开放源代码，我们也不能直接发布这些代码。</p>
+<p>可以说，这些商业程序的限制决定了 Minecraft 模组/服务端特殊的开发流程。</p>
+<p>经过长时间的摸索，社区逐渐形成了两种主流的「改代码」方式。</p>
+<p>较为常见的方式是，反编译 Minecraft 并在此基础上修改添加功能，代表性的项目有：</p>
+<ul>
+<li><a href="https://bukkit.org/pages/about-us" target="_blank" rel="noopener">CraftBukkit</a>, <a href="https://www.spigotmc.org/" target="_blank" rel="noopener">Spigot</a>, <a href="https://papermc.io/" target="_blank" rel="noopener">Paper</a> 和它们的衍生服务端。</li>
+<li><a href="https://github.com/MinecraftForge/MinecraftForge" target="_blank" rel="noopener">MinecraftForge</a></li>
+<li>MCPC, Cauldron, Thermos 和大部分 Forge Bukkit 混合服务端。</li>
+</ul>
+<p>另一种方式是，在 Minecraft 服务端启动时动态地修改加载的代码，代表性的项目有：</p>
+<ul>
+<li><p><a href="https://github.com/IzzelAliz/Arclight" target="_blank" rel="noopener">Arclight</a></p>
+</li>
+<li><p><a href="https://www.spongepowered.org/" target="_blank" rel="noopener">Sponge</a></p>
+</li>
+<li><p><a href="https://fabricmc.net/" target="_blank" rel="noopener">Fabric</a>, <a href="http://www.liteloader.com/" target="_blank" rel="noopener">LiteLoader</a></p>
+</li>
+<li><p><a href="https://github.com/MinecraftForge/MinecraftForge" target="_blank" rel="noopener">MinecraftForge</a>*</p>
+<p>  Minecraft 1.12 及之前版本的 MinecraftForge 同时利用了这两种技术，即对反编译的源码进行修改，并在启动时加载这些修改。该项目同时自带一些「CoreMod」用于运行时修改代码，例如 AccessTransformer。</p>
+</li>
+</ul>
+<h2 id="反编译与反混淆"><a href="#反编译与反混淆" class="headerlink" title="反编译与反混淆"></a>反编译与反混淆</h2><blockquote>
+<p>本文不提供 Minecraft 游戏文件分发，所述内容仅供学习参考。</p>
+</blockquote>
+<p>Minecraft 作为一款商业游戏，使用了混淆技术来保护其不被轻易地盗用。我们以 1.17.1 版本为例，可以在 <a href="https://launcher.mojang.com/v1/objects/a16d67e5807f57fc4e550299cf20226194497dc2/server.jar" target="_blank" rel="noopener">该链接</a> 下载到对应的服务端文件。</p>
+<p>打开这个 JAR 文件后，我们可以看到以下内容：</p>
+<p><img src="server_files.png" alt></p>
+<p>其中的文件夹是 Minecraft 引用的第三方库文件和其自身使用的资源文件，而剩余的 <code>.class</code> 文件即为 Minecraft 的代码文件。</p>
+<p>现在我们遇到了第一个问题，<code>.class</code> 文件并不是源代码，不能直接阅读。对此，社区会使用反编译器进行代码文件的逆向工程，常用的反编译器为 <a href="https://github.com/fesh0r/fernflower" target="_blank" rel="noopener">FernFlower</a>，被上文介绍的所有基于反编译修改的项目采用。<br><a href="https://github.com/Col-E/Recaf" target="_blank" rel="noopener">Recaf</a> 提供了 FernFlower 的图形界面程序。</p>
+<p>我们拿 <code>abv.class</code> 举例，反编译后如下：</p>
+<p><img src="obf_decompile.png" alt></p>
+<p>显而易见我们遇到了第二个问题，所有的方法和字段都被<strong>混淆</strong>了，需要一种方法来将它变得人类可读。例如，上文的 <code>abv</code> 实际上的类名为 <code>Ticket</code>。</p>
+<p>在 Minecraft 1.14.4 以前，社区采用的办法是，根据自身的开发经验，猜出或者说给出这些类混淆前的名称。类文件中的字符串常量、继承和调用关系无不暗示着这些类本来的用途，经验丰富的开发者便可以通过这些蛛丝马迹猜出它们本来的名称。而这些从混淆后到混淆前的名称的映射，我们称之为混淆表或者映射表。</p>
+<p>社区一共总结了三套常用的混淆表，它们分别是</p>
+<ul>
+<li><a href="http://export.mcpbot.bspk.rs/" target="_blank" rel="noopener">MCP</a> 被 Forge 项目和大部分混合服务端采用</li>
+<li><a href="https://github.com/FabricMC/yarn" target="_blank" rel="noopener">Yarn</a> 被 Fabric 项目采用，Paper 项目部分使用了它的参数名</li>
+<li><a href="https://hub.spigotmc.org/stash/projects/SPIGOT/repos/builddata/browse" target="_blank" rel="noopener">BuildData</a> 被 Spigot 项目采用</li>
+</ul>
+<p>自 Minecraft 1.14.4 起，微软开始公布 Minecraft 的官方混淆表，声称其能帮助 Modding 社区更好发展。官方映射已被 Arclight、Forge、Sponge 和 Paper 项目采用，Spigot 项目部分采用了官方映射的字段名用于开发。Fabric 侧允许用户使用官方表，但并非默认。</p>
+<p>因为微软仅公布了类名、方法名与字段名的混淆数据，并未公布方法参数名称，因此 <a href="https://github.com/ParchmentMC/Parchment" target="_blank" rel="noopener">Parchment</a> 项目成立，仅提供参数名称。</p>
+<p>反混淆技术的具体实现细节位于<a href="#反混淆的实现">反混淆的实现</a>节。</p>
+<p>对于使用反编译后的代码修改进行开发的项目，因为反编译器不够完善，反编译的代码通常充满错误而不能直接编译，我们还需要一个额外的步骤：手动修复反编译的错误。</p>
+<p>对于 Forge 项目，所有的修复代码和工具提供自 <a href="https://github.com/MinecraftForge/MCPConfig" target="_blank" rel="noopener">MCPConfig</a> 项目，而该项目的前身是 <a href="http://www.modcoderpack.com/" target="_blank" rel="noopener">ModCoderPack</a>。MCPConfig 项目包含了每个反编译源代码文件的 <code>patch</code>。对于 Spigot 项目，这些修复直接包含在功能实现的 patch 中。</p>
+<h2 id="避免分发官方代码"><a href="#避免分发官方代码" class="headerlink" title="避免分发官方代码"></a>避免分发官方代码</h2><p>分发问题通常只出现在使用反编译代码进行修改的项目上。知名的 CraftBukkit 项目因为直接提供修改后的 Minecraft 代码和二进制文件而受到 <a href="https://github.com/github/dmca/blob/master/2014/2014-09-05-CraftBukkit.md" target="_blank" rel="noopener">DMCA Takedown</a> 请求，随后社区对这种情形进行了规避。</p>
+<p>一共有两种情况可能会涉及到 Minecraft 代码文件的分发：通过网络与他人共同开发一个项目，以及将这个项目最终分发给用户。社区对这两种情况都进行了规避。</p>
+<p>在开发阶段，互联网上公开发布的是 <code>patch</code> 文件，包含了对源码修改的描述。<code>patch</code> 文件如下所示：</p>
+<p><img src="diff.png" alt></p>
+<p>该文件描述了 <code>pom.xml</code> 文件从第一行开始后的 11 行内，应该删去哪些内容再加入哪些内容。通过 <code>patch</code> 文件，开发者可以避免发布整个源代码，而仅仅发布修改的片段。</p>
+<p><code>patch</code> 文件可以通过比较修改前和修改后的文件来生成，也可以用 <code>patch</code> 文件结合修改前的文件生成修改后的文件。</p>
+<p>在 Minecraft 1.13 以前，Forge 模组在开发前需要输入 <code>gradle setupDecompWorkspace</code>，该命令实际上便是进行了 Minecraft 文件的下载、反混淆、反编译、源码修复与应用 <code>patch</code> 文件。Minecraft 1.13 后 Forge 团队优化了工具链，从此开发者不需要手动运行这个任务了。</p>
+<p>而面向最终用户，社区同样不能将他们修改过的游戏 JAR 文件直接发布。</p>
+<p>Forge 项目与 Paper 项目选择发布一种类似 <code>patch</code> 文件的 <code>binpatch</code>，描述了对于二进制文件的修改内容，从而避免了直接分发。</p>
+<p>Spigot 项目选择了另一种方式，发布 <a href="https://www.spigotmc.org/wiki/buildtools/" target="_blank" rel="noopener">BuildTools</a> 让用户自行构建最终的 JAR 文件。BuildTools 隐藏了所有的开发环境细节，使得任何一个安装了 Java 的普通人可以通过一个命令构建出 Spigot，而他只需要等<strong>一会儿</strong>。</p>
+<h2 id="事件模型"><a href="#事件模型" class="headerlink" title="事件模型"></a>事件模型</h2><p>我们已经知道了怎么修改 Minecraft 的代码了，接下来继续关注如何实现功能，并向其他开发者开放。本文只关注服务端侧的功能。</p>
+<p>对原版代码的修改，大部分情况下可以概括成「在某一行前执行我们的代码，修改一些变量，决定是否继续执行」，比如：</p>
+<ul>
+<li>让玩家不能使用 <code>/talk</code> 命令：在执行 <code>/talk</code> 命令的代码前，决定不执行接下来的代码</li>
+<li>让玩家用腐肉烧出皮革：在熔炉熔炼结束的代码前，修改产物为皮革，并继续执行</li>
+</ul>
+<p>这样的模型被归纳为事件模型。每个事件提供了在事件发生时获取上下文信息（比如执行的命令是 <code>/talk</code>），执行外部代码，修改上下文和取消执行的能力。</p>
+<p>上文介绍的几乎所有项目都采用了事件模型为第三方开发者提供拓展和修改 Minecraft 自带逻辑的 API。Fabric 项目提供了 <code>Callback</code> 作为 API，也可以看做另一种形式的事件。</p>
+<p>通过提供丰富的事件，例如玩家加入服务器的事件、玩家攻击生物的事件等，各大开发框架得以更好的为第三方开发者服务。一个统一的事件同样避免了多个第三方开发者同时修改一个地方的代码而引入潜在的冲突。</p>
+<h2 id="实现功能：从类说起"><a href="#实现功能：从类说起" class="headerlink" title="实现功能：从类说起"></a>实现功能：从类说起</h2><p>对于基于反编译修改的项目来说，实现一个事件很简单：在对应的代码出写一行调用事件的代码就可以了。</p>
+<p>而对于运行时修改的项目，情况就变得复杂一些，有两个东西必须介绍：类加载器与类修改技术。</p>
+<p>类是如何加载的呢？以 URLClassLoader 为例，在进行类加载时，类加载器首先查找已经加载的类，如果不存在则请求父加载器加载，如果不存在则尝试自己加载。这样的加载模型叫做双亲委派，伪代码如下：</p>
+<pre class="line-numbers language-java"><code class="language-java">Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> <span class="token function">loadClass</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span> <span class="token keyword">throws</span> ClassNotFoundException <span class="token punctuation">{</span>
+    <span class="token comment" spellcheck="true">// First, check if the class has already been loaded</span>
+    Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> c <span class="token operator">=</span> <span class="token function">findLoadedClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>c <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">try</span> <span class="token punctuation">{</span>
+            c <span class="token operator">=</span> parent<span class="token punctuation">.</span><span class="token function">loadClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ClassNotFoundException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// ClassNotFoundException thrown if class not found</span>
+            <span class="token comment" spellcheck="true">// from the parent class loader</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>c <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// If still not found, then invoke findClass in order</span>
+            <span class="token comment" spellcheck="true">// to find the class.</span>
+            c <span class="token operator">=</span> <span class="token function">findClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> c<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果我们可以在「自己加载」这一阶段，对即将加载的类文件进行一些修改，便可以达成「改代码」的目标。于是我们可以写出这样的代码：</p>
+<pre class="line-numbers language-java"><code class="language-java">Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> <span class="token function">findClass</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span> <span class="token keyword">throws</span> ClassNotFoundException <span class="token punctuation">{</span>
+    <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> bytes <span class="token operator">=</span> <span class="token function">loadFromDisk</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>bytes <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">ClassNotFoundException</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    bytes <span class="token operator">=</span> <span class="token function">transformClass</span><span class="token punctuation">(</span>bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> c <span class="token operator">=</span> <span class="token function">defineClass</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> bytes<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> c<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>defineClass</code> 将字节流的类文件转换为内存中可用的 Java 类，这一过程由 Java 虚拟机（JVM）执行，我们不需要知道其原理也无法干涉。自然，奥秘包含在 <code>transformClass</code> 方法中，至此我们终于可以开始介绍类修改技术。</p>
+<p>尽管不像 <code>.java</code> 文件一样可供程序员直接阅读，<code>.class</code> 是有规范格式和结构的文件。本文不对类文件格式做详细介绍，仅描述我们关心的地方。</p>
+<p>我们可以使用 <code>javap -c abv.class</code> 查看前文所述 abv 类的类文件内容（部分内容已省略）：</p>
+<pre><code>public final class abv&lt;T extends java.lang.Object&gt; implements java.lang.Comparable&lt;abv&lt;?&gt;&gt; {
+  ...
+  public int a(abv&lt;?&gt;);
+    Code:
+       0: aload_0
+       1: getfield      #33                 // Field b:I
+       4: aload_1
+       5: getfield      #33                 // Field b:I
+       8: invokestatic  #47                 // Method java/lang/Integer.compare:(II)I
+       ...
+       62: ireturn
+  ...</code></pre><p>类文件中我们最关心的「逻辑」存在于方法的 <code>Code</code> 属性中，为操作码（Opcode）序列的形式。在反编译修改的项目中，我们说「在某一行插入我们自己的代码」，对应到类文件也就是在某个 Opcode 处加入我们自己的 Opcode 序列。</p>
+<p>操作类文件时，我们通常使用 <a href="https://asm.ow2.io/" target="_blank" rel="noopener">ASM</a> 库解析 <code>.class</code>。ASM 库有两套面向开发者的 API，通常称为 Core API 和 Tree API。Core API 使用 Visitor 模式，这种编程范式尤其适合对固定结构的数据提供多种操作。Tree API 相对易于理解，也可能更易于操作，同时性能相较 Core API 略低。</p>
+<p>接下来两个小节将会展示对于类修改的基本理念。</p>
+<h3 id="反混淆的实现"><a href="#反混淆的实现" class="headerlink" title="反混淆的实现"></a>反混淆的实现</h3><p>前文所述，反混淆可以将 <code>abv</code> 变成 <code>Ticket</code>，那么这是怎么做到的呢？</p>
+<p>我们首先介绍类文件的「签名」，也即类型在 JVM 中的表示方法。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>签名</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>boolean</td>
+<td>Z</td>
+</tr>
+<tr>
+<td>byte</td>
+<td>B</td>
+</tr>
+<tr>
+<td>char</td>
+<td>C</td>
+</tr>
+<tr>
+<td>short</td>
+<td>S</td>
+</tr>
+<tr>
+<td>int</td>
+<td>I</td>
+</tr>
+<tr>
+<td>long</td>
+<td>J</td>
+</tr>
+<tr>
+<td>float</td>
+<td>F</td>
+</tr>
+<tr>
+<td>double</td>
+<td>D</td>
+</tr>
+<tr>
+<td>java.lang.Object</td>
+<td>Ljava/lang/Object;</td>
+</tr>
+<tr>
+<td>T 的数组类型</td>
+<td>[T</td>
+</tr>
+<tr>
+<td>方法</td>
+<td>(参数签名)返回类型签名</td>
+</tr>
+</tbody></table>
+<p>JVM 中，引用类型的内部表示（internal name）以斜线（<code>/</code>）分割，签名则是在其前后加上 <code>L</code> 和 <code>;</code>。方法的签名则是在括号内写上所有参数签名的拼接，最后加上返回值的签名。因此，方法</p>
+<pre><code>String[][] foo(String s, double d, int[] array)</code></pre><p>的类型签名为 </p>
+<pre><code>(Ljava/lang/String;D[I)[[Ljava/lang/String;</code></pre><p>因此，如果我们想把 <code>abv</code> 翻译成 <code>net.minecraft.server.level.Ticket</code>，就需要将类文件中所有的 <code>Labv;</code> 替换为 <code>Lnet/minecraft/server/level/Ticket;</code>。</p>
+<p>同时，我们也想对字段和方法进行重命名，其原理是类似的，但是我们需要介绍几条特定的 Opcode。</p>
+<p>对于字段，我们会有 <code>GETFIELD</code>, <code>PUTFIELD</code>, <code>GETSTATIC</code>, <code>PUTSTATIC</code> 指令，分别用来读取写入普通字段和静态字段的值。例如，对于 <code>abv</code> 类中的 <code>int b</code> 字段，我们要将其命名为 <code>ticketLevel</code>，则需要将所有的 </p>
+<pre><code>GET/PUTFIELD abv b:I</code></pre><p>翻译成 </p>
+<pre><code>GET/PUTFIELD net/minecraft/server/level/Ticket ticketLevel:I</code></pre><p>类似的，对于方法，我们有 <code>INVOKEVIRTUAL</code>, <code>INVOKESTATIC</code> 等五条指令用来调用方法，将其对应地替换即可。</p>
+<p>如果使用 ASM 库来实现这样的功能，我们可以写出这样的代码（并不完整！）：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">class</span> <span class="token class-name">RemapVisitor</span> <span class="token keyword">extends</span> <span class="token class-name">ClassVisitor</span> <span class="token punctuation">{</span>
+
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">visit</span><span class="token punctuation">(</span><span class="token keyword">int</span> version<span class="token punctuation">,</span> <span class="token keyword">int</span> access<span class="token punctuation">,</span> String name<span class="token punctuation">,</span> String signature<span class="token punctuation">,</span> String superName<span class="token punctuation">,</span> String<span class="token punctuation">[</span><span class="token punctuation">]</span> interfaces<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>name<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"abv"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visit</span><span class="token punctuation">(</span>version<span class="token punctuation">,</span> access<span class="token punctuation">,</span> <span class="token string">"net/minecraft/server/level/Ticket"</span><span class="token punctuation">,</span> signature<span class="token punctuation">,</span> superName<span class="token punctuation">,</span> interfaces<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visit</span><span class="token punctuation">(</span>version<span class="token punctuation">,</span> access<span class="token punctuation">,</span> name<span class="token punctuation">,</span> signature<span class="token punctuation">,</span> superName<span class="token punctuation">,</span> interfaces<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> MethodVisitor <span class="token function">visitMethod</span><span class="token punctuation">(</span><span class="token keyword">int</span> access<span class="token punctuation">,</span> String name<span class="token punctuation">,</span> String descriptor<span class="token punctuation">,</span> String signature<span class="token punctuation">,</span> String<span class="token punctuation">[</span><span class="token punctuation">]</span> exceptions<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">RemapMethodVisitor</span><span class="token punctuation">(</span>Opcodes<span class="token punctuation">.</span>ASM9<span class="token punctuation">,</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visitMethod</span><span class="token punctuation">(</span>access<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">,</span> signature<span class="token punctuation">,</span> exceptions<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">class</span> <span class="token class-name">RemapMethodVisitor</span> <span class="token keyword">extends</span> <span class="token class-name">MethodVisitor</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">visitFieldInsn</span><span class="token punctuation">(</span><span class="token keyword">int</span> opcode<span class="token punctuation">,</span> String owner<span class="token punctuation">,</span> String name<span class="token punctuation">,</span> String descriptor<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>owner<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"abv"</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> name<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"b"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visitFieldInsn</span><span class="token punctuation">(</span>opcode<span class="token punctuation">,</span> <span class="token string">"net/minecraft/server/level/Ticket"</span><span class="token punctuation">,</span> <span class="token string">"ticketLevel"</span><span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visitFieldInsn</span><span class="token punctuation">(</span>opcode<span class="token punctuation">,</span> owner<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>实际使用中，一般使用一个 Map 保存所有可能的映射。</p>
+<p>对于「所有可能的映射」，社区一般使用一个文本文件进行表示，而这个文本文件衍生出了很多种格式：</p>
+<ul>
+<li><code>TSRG</code>，由 Forge 项目使用</li>
+<li><code>SRG</code> 及其衍生 <code>CSRG</code>，由 Forge 项目和 Spigot 项目使用</li>
+<li><code>TINY</code>，由 Fabric 项目使用</li>
+</ul>
+<p>以 <code>TSRG</code> 格式举例，对于 <code>abv</code> 类的所有映射，有以下内容：</p>
+<pre><code>abv net/minecraft/server/level/Ticket
+    a type
+    b ticketLevel
+    c key
+    d createdTick
+    &lt;init&gt; (Labw;ILjava/lang/Object;)V &lt;init&gt;
+    a ()Labw; getType
+    a (Labv;)I compareTo
+    a (J)V setCreatedTick
+    b ()I getTicketLevel
+    b (J)Z timedOut
+    compareTo (Ljava/lang/Object;)I compareTo
+    equals (Ljava/lang/Object;)Z equals
+    hashCode ()I hashCode
+    toString ()Ljava/lang/String; toString</code></pre><p>以上介绍的反混淆技术，包括对类文件的处理和映射表文件格式的读取，社区都提供了对应的工具。最常用的库是 <a href="https://github.com/md-5/SpecialSource" target="_blank" rel="noopener">SpecialSource</a>，提供了上述所有功能的支持，被广泛的使用于除了 Fabric 的几乎所有项目中。Fabric 社区使用 <a href="https://github.com/FabricMC/tiny-remapper" target="_blank" rel="noopener">tiny-remapper</a>。Cadix Dev Team 提供了一系列用于各种字节码操作的库，<a href="https://github.com/CadixDev/Lorenz" target="_blank" rel="noopener">Lorenz</a> 可用于表示映射，<a href="https://github.com/CadixDev/Atlas" target="_blank" rel="noopener">Atlas</a> 可用于反混淆类文件。</p>
+<p>除了对类文件进行反混淆外，社区同样开发了对源代码进行反混淆的软件，如 <a href="https://github.com/MinecraftForge/Srg2Source" target="_blank" rel="noopener">Srg2Source</a> 和 <a href="https://github.com/CadixDev/Mercury" target="_blank" rel="noopener">Mercury</a>。</p>
+<h3 id="禅与代码注入技术"><a href="#禅与代码注入技术" class="headerlink" title="禅与代码注入技术"></a>禅与代码注入技术</h3><p>反混淆仅仅做了对类已有代码的重命名，在大多数情况下，这并不能满足开发者对添加功能的需要。</p>
+<p>我们对一个常见的功能举例分析：每 Tick 执行任务。理想情况下，我们只需要在服务端的大循环的任意一个地方插入一行 <code>MyTask.run()</code> 就可以了。</p>
+<p>假设服务端的循环如下（经过修改）：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MinecraftServer</span> <span class="token punctuation">{</span>
+
+  <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">runServer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>running<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">long</span> i <span class="token operator">=</span> Util<span class="token punctuation">.</span><span class="token function">getMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token keyword">this</span><span class="token punctuation">.</span>nextTickTime<span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>i <span class="token operator">></span> 2000L <span class="token operator">&amp;&amp;</span> <span class="token keyword">this</span><span class="token punctuation">.</span>nextTickTime <span class="token operator">-</span> <span class="token keyword">this</span><span class="token punctuation">.</span>lastOverloadWarning <span class="token operator">>=</span> 15000L<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">long</span> j <span class="token operator">=</span> i <span class="token operator">/</span> 50L<span class="token punctuation">;</span>
+        LOGGER<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"Can't keep up! Is the server overloaded? Running {}ms or {} ticks behind"</span><span class="token punctuation">,</span> i<span class="token punctuation">,</span> j<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>nextTickTime <span class="token operator">+=</span> j <span class="token operator">*</span> 50L<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>lastOverloadWarning <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>nextTickTime<span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+      <span class="token keyword">this</span><span class="token punctuation">.</span>nextTickTime <span class="token operator">+=</span> 50L<span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">tickServer</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token operator">:</span><span class="token operator">:</span>haveTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">waitUntilNextTick</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>我们可能就会想在 <code>this.tickServer(this::haveTime);</code> 前面插入自身的任务调用代码。这个插入调用的代码和上文相当类似（仍然有省略！）：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">class</span> <span class="token class-name">TaskVisitor</span> <span class="token keyword">extends</span> <span class="token class-name">ClassVisitor</span> <span class="token punctuation">{</span>
+
+  <span class="token annotation punctuation">@Override</span>
+  <span class="token keyword">public</span> MethodVisitor <span class="token function">visitMethod</span><span class="token punctuation">(</span><span class="token keyword">int</span> access<span class="token punctuation">,</span> String name<span class="token punctuation">,</span> String descriptor<span class="token punctuation">,</span> String signature<span class="token punctuation">,</span> String<span class="token punctuation">[</span><span class="token punctuation">]</span> exceptions<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    MethodVisitor mv <span class="token operator">=</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visitMethod</span><span class="token punctuation">(</span>access<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">,</span> signature<span class="token punctuation">,</span> exceptions<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>name<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"runServer"</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> descriptor<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"()V"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">TaskMethodVisitor</span><span class="token punctuation">(</span>Opcodes<span class="token punctuation">.</span>ASM9<span class="token punctuation">,</span> mv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> mv<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">TaskMethodVisitor</span> <span class="token keyword">extends</span> <span class="token class-name">MethodVisitor</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">visitMethodInsn</span><span class="token punctuation">(</span><span class="token keyword">int</span> opcode<span class="token punctuation">,</span> String owner<span class="token punctuation">,</span> String name<span class="token punctuation">,</span> String descriptor<span class="token punctuation">,</span> <span class="token keyword">boolean</span> isInterface<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>name<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"tickServer"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visitMethodInsn</span><span class="token punctuation">(</span>Opcodes<span class="token punctuation">.</span>INVOKESTATIC<span class="token punctuation">,</span> <span class="token string">"MyTask"</span><span class="token punctuation">,</span> <span class="token string">"run"</span><span class="token punctuation">,</span> <span class="token string">"()V"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+      <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">visitMethodInsn</span><span class="token punctuation">(</span>opcode<span class="token punctuation">,</span> owner<span class="token punctuation">,</span> name<span class="token punctuation">,</span> descriptor<span class="token punctuation">,</span> isInterface<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>我们便出色的完成了「插入代码」的工作 —— 但是！当要插入的代码逐渐变多，为每个调用单独写两个类的工作量变的令人无法接受。社区不断有简化这些重复劳动的尝试，最终出现了一个叫 <a href="https://github.com/SpongePowered/Mixin" target="_blank" rel="noopener">Mixin</a> 的项目。</p>
+<p>使用 Mixin 后，对于上文的代码，我们只需要写：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token annotation punctuation">@Mixin</span><span class="token punctuation">(</span>MinecraftServer<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MinecraftServerMixin</span> <span class="token punctuation">{</span>
+
+  <span class="token annotation punctuation">@Inject</span><span class="token punctuation">(</span>method <span class="token operator">=</span> <span class="token string">"runServer"</span><span class="token punctuation">,</span> at <span class="token operator">=</span> <span class="token annotation punctuation">@At</span><span class="token punctuation">(</span>value <span class="token operator">=</span> <span class="token string">"INVOKE"</span><span class="token punctuation">,</span> 
+          target <span class="token operator">=</span> <span class="token string">"Lnet/minecraft/server/MinecraftServer;tickServer(Ljava/util/function/BooleanSupplier;)V"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token keyword">void</span> <span class="token function">beforeTickServer</span><span class="token punctuation">(</span>CallbackInfo ci<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    MyTask<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>而这个代码本身可读性比两个 Visitor 类也高出不少：注入（Inject）方法 runServer，目标（target）为 <code>MinecraftServer:tickServer</code> 的方法调用（INVOKE）。</p>
+<p>Mixin 起源于 LiteLoader 项目，皆由 Mumfrey 开发，随后转入 Sponge 社区并被完整采用。Sponge 的两个服务端可能是最先采用 Mixin 的大型项目。</p>
+<p>本文无意介绍 ASM 与 Mixin 具体的使用方式和更多更复杂的类文件修改技巧。</p>
+<h2 id="不同的运行时环境：重混淆"><a href="#不同的运行时环境：重混淆" class="headerlink" title="不同的运行时环境：重混淆"></a>不同的运行时环境：重混淆</h2><p>作为一个商业程序（似乎已经说过很多遍了），Minecraft 发布时被混淆。混淆不仅使得用户很难查看它的代码，还带来了一个新的问题：不同版本之间，同一个类、同一个方法可能有不同的混淆名字。</p>
+<p>针对这一问题，Forge 和 Fabric 不约而同地采用了一个做法：为相同的类/方法分配相同的名字（序号）。天哪，我们已经有三套名称了！它们分别是：Mojang 发布的混淆名，跨版本稳定的中间名，开发者编写代码使用的人类可读名。</p>
+<p>在 Forge 侧，这样的三套名称分别被称为 <code>notch name</code>, <code>srg name</code> 和 <code>mcp name</code>，所有的 srg 文件位于 MCPConfig 项目；在Fabric 侧，后两套为 <a href="https://github.com/FabricMC/intermediary" target="_blank" rel="noopener">Intermediary</a> 和 Yarn。</p>
+<p>对于不同版本之间不同混淆名的类，我们需要一个工具来对它进行匹配。Forge 社区使用 <a href="https://github.com/MinecraftForge/DePigifier" target="_blank" rel="noopener">DePigifier</a>。</p>
+<p>对于 Forge 和 Fabric，Minecraft 服务器运行时，实际使用的名称便是这一套中间名。</p>
+<p>采取中间名作为实际运行的环境还有另一个好处，不同开发者使用不同的人类可读名开发也可以同时运行（MCP/官方映射/Yarn/?）。同时中间名带来另一个麻烦，开发环境和运行环境完全不一致，编译完成后还需要一次额外的重混淆。</p>
+<p>至此，我们终于可以完整地总结 Forge 和 Paper 这样的反编译修改项目是如何开发的了：</p>
+<ul>
+<li>我们下载了 <code>notch name</code> 的 minecraft_server.1.17.1.jar</li>
+<li>使用 MCPConfig 项目中的 notch-&gt;srg 混淆表反混淆它</li>
+<li>反编译，并用 MCPConfig 中的 patch 修复它</li>
+<li>使用 Srg2Source 把修复完成的源代码反混淆成 MCP 名</li>
+<li>修改源代码，添加功能，并生成 patch 文件</li>
+<li>编译代码，将编译结果重混淆为中间名</li>
+<li>与原始的服务端 JAR 文件比较，生成一个 binpatch 文件</li>
+<li>将包含 binpatch 文件的安装器发布给用户，用户得以启动</li>
+</ul>
+<p>至于像 Sponge 这样的运行时修改项目，则是这样：</p>
+<ul>
+<li>前两步仍然一致</li>
+<li>选择一个人类可读名，继续反混淆</li>
+<li>基于这个反混淆的结果，进行开发；特别地，Sponge 采用编写 Mixin</li>
+<li>编译，重混淆，发布</li>
+<li>用户启动时，程序动态地修改类</li>
+</ul>
+<h2 id="混合服务端"><a href="#混合服务端" class="headerlink" title="混合服务端"></a>混合服务端</h2><blockquote>
+<p>本人是 Arclight 服务端作者，这里使用 Arclight 举例</p>
+</blockquote>
+<p>混合服务端究竟做了什么呢？</p>
+<p>答案是明显的：在 B 上实现 A 的所有功能。这样功能的实现可以通过任何一种「改代码」手段来完成：Arclight 使用 Mixin，而大多数 Forge Bukkit 服务端使用反编译修改。</p>
+<p>混合服务端还需要处理一件事情，即目标环境和原环境的映射名称可能完全不同。例如，Forge 的运行时名称是 SRG，而 Spigot 的运行时名称是 BuildData 中的名称。对于不同名称的处理可以使用上文所述反混淆/重混淆手段。</p>
+<p>对于从原环境到目标环境的映射，我们需要额外生成一套映射表；也就是说，如果 Forge 的映射表是 notch-&gt;srg，而 Spigot 是 notch-&gt;spigot，我们需要生成 spigot-&gt;srg 的映射。而由于 Java 中存在返回类型协变、方法参数协变逆变、接口方法由实现类的父类方法隐性实现等等因素，导致生成这样的映射表并不是一件简单的事。</p>
+<p><a href="https://github.com/CadixDev/Lorenz" target="_blank" rel="noopener">Lorenz</a> 库可以合并两个映射表并输出，尽管其并不完善。目前来说，可能只有 <a href="https://github.com/ArclightPowered/arclight-gradle-plugin" target="_blank" rel="noopener">arclight-gradle-plugin</a> 有能力正确地生成这样的映射表。</p>
+<p>尽管如此，上述手段无法处理一种情况，也就是 Java 的反射技术。</p>
+<p>Bukkit API 的目标是用其提供的版本无关接口，完成所有对 Minecraft 服务器的控制，但是总有或多或少的理由，开发者绕过这套 API，去直接调用 Minecraft 本身的代码。</p>
+<p>而由于 Spigot 系列服务端会在构建时将 Minecraft 自带类的包名混淆成如同 <code>net.minecraft.server.v1_17_R1</code> 的形式，并且每个版本都不同，所以大部分开发者逐渐总结了一套「接触」Minecraft 原生代码的方法：</p>
+<ul>
+<li>拿到<code>net.minecraft.server.v1_17_R1</code> 这样的包名</li>
+<li>取出其中的版本号节，如 <code>v1_17_R1</code></li>
+<li>拼接出完整类名，比如 <code>&quot;net.minecraft.server.&quot; + version + &quot;.EntityPlayer&quot;</code></li>
+<li>用反射技术操作这个类</li>
+</ul>
+<p>从而让一套代码可以在多个 Spigot 版本下使用。</p>
+<p>这样的方法对于开发者自然是非常方便的，但是对于混合服务端开发者来说，处理这些代码让其正确执行就不大容易了。</p>
+<p>Arclight 将所有反射调用进行了重定向。考虑</p>
+<pre><code>abv net/minecraft/server/level/Ticket
+    f_9421_ ticketLevel</code></pre><p>就能写出这样的代码：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">static</span> Field <span class="token function">redirectGetField</span><span class="token punctuation">(</span>Class <span class="token class-name">cl</span><span class="token punctuation">,</span> String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>cl<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"net.minecraft.server.level.Ticket"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>name<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"ticketLevel"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      name <span class="token operator">=</span> <span class="token string">"f_9421_"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> cl<span class="token punctuation">.</span><span class="token function">getField</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同时在对应的 <code>Field#getName</code> 调用再转换回原本的名称就可以了。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">static</span> String <span class="token function">redirectGetName</span><span class="token punctuation">(</span>Field f<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>f<span class="token punctuation">.</span><span class="token function">getDeclaringClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"net.minecraft.server.level.Ticket"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>f<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span><span class="token string">"f_9421_"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">return</span> <span class="token string">"ticketLevel"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> f<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同样的方法可以适用于类和方法的相关反射调用。</p>
+<p>运行时重混淆技术还有更多有趣的话题：</p>
+<ul>
+<li>插件动态地定义新类</li>
+<li>插件在运行时编译源码</li>
+<li>插件读取 Minecraft 的类文件进行处理</li>
+</ul>
+<p>Arclight 都有对应的处理，文章在此按下不表，可以参考 Arclight 的源码。</p>
+<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><ul>
+<li><a href="https://xfl03.gitee.io/coremodtutor/" target="_blank" rel="noopener">xfl03 的 CoreMod 教程</a> —— 关于「改代码」的方法论</li>
+<li><a href="https://harbinger.covertdragon.team/chapter-01/mcp.html" target="_blank" rel="noopener">Harbinger 第一节</a> 关于 MCP 与 Forge 的介绍</li>
+<li><a href="https://github.com/SpongePowered/Mixin/wiki/Introduction-to-Mixins---The-Mixin-Environment" target="_blank" rel="noopener">Mixin Wiki Environment 节</a> （英）介绍了 Mixin 是如何在运行时处理类的</li>
+<li><a href="https://bdn.tdiant.net/#/unit/5-1" target="_blank" rel="noopener">tdiant 的 Bukkit 开发教程</a> 5-1 节介绍了一般 Bukkit 开发者处理 Minecraft 原生代码的方法</li>
+<li><a href="https://fabricmc.net/" target="_blank" rel="noopener">Fabric 项目官网</a> （英）含有该项目工具链介绍</li>
+</ul>
+</div></div><!--.post-main.post-comment--><div id="gitalk-container"></div><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css"><script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script><script>const gitalk = new Gitalk({
+    clientID: '1b4c00731894d12d4568',
+    clientSecret: '1fa321199cc198f80203716d073c8f2ff2dec849',
+    repo: 'blog',
+    owner: 'IzzelAliz',
+    admin: ['IzzelAliz'],
+    id: location.pathname,
+    distractionFreeMode: false,
+    proxy: 'https://blog-api.izzel.io/?https://github.com/login/oauth/access_token'
+})
+gitalk.render('gitalk-container')</script><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

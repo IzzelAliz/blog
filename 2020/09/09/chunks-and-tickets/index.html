@@ -1,0 +1,277 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>聊聊区块和 Ticket | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2020-09-09</div></div></div><div class="container post-header"><h1>聊聊区块和 Ticket</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#加载等级-Level"><span class="toc-number">1.</span> <span class="toc-text">加载等级 Level</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#等级扩散-Level-Propagation"><span class="toc-number">2.</span> <span class="toc-text">等级扩散 Level Propagation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#区块状态-ChunkStatus"><span class="toc-number">3.</span> <span class="toc-text">区块状态 ChunkStatus</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ticket-种类"><span class="toc-number">4.</span> <span class="toc-text">Ticket 种类</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#屁话多！如何使用？"><span class="toc-number">5.</span> <span class="toc-text">屁话多！如何使用？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他"><span class="toc-number">6.</span> <span class="toc-text">其他</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#关于谁加载了区块"><span class="toc-number">7.</span> <span class="toc-text">关于谁加载了区块</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#总结"><span class="toc-number">8.</span> <span class="toc-text">总结</span></a></li></ol></details></div><div class="container post-content"><p>Minecraft 在 1.14 引入了 Ticket 系统来管理区块的加载和卸载。</p>
+<p>本文采用 Minecraft 1.15.2，MCP 的 <code>20200904-1.15.1</code> 映射表写就。</p>
+<p>让我们开始吧。</p>
+<hr>
+<p>有一日，一名玩家百无聊赖下，在 Minecraft 中开始了一次新的冒险，于是万物伊始。</p>
+<p><img src="loading_screen.png" alt></p>
+<p>这个界面，是新的区块加载方式最为直观的体现，稍后我们就会讲解这些颜色对应着什么。</p>
+<p>在 Minecraft 1.14 中，Mojang 引入了 Ticket 用于管理区块是否、何时加载，而一个 Ticket 由以下属性组成：</p>
+<ol>
+<li>一个 <code>net.minecraft.world.server.TicketType</code>，用于表示这个 Ticket 的种类；种类指定了它的存活时间 <code>lifespan</code>，单位是游戏刻；</li>
+<li>一个加载等级 <code>level</code>，用于加载周围区块的距离。</li>
+</ol>
+<h2 id="加载等级-Level"><a href="#加载等级-Level" class="headerlink" title="加载等级 Level"></a>加载等级 Level</h2><p>相信这篇文章的读者，对于区块加载可能有一个感性的认识。</p>
+<p>出生点的区块总是加载，而且范围较大，可能有十多个区块；玩家周围一段距离的区块总是加载，看起来和 <code>view-distance</code> 视距有关。</p>
+<p>实际上，这些加载的距离由加载等级指定。</p>
+<p>游戏中，区块的加载等级以 33 为界，分为四种区块位置类型（<code>net.minecraft.world.server.ChunkHolder.LocationType</code>）：</p>
+<ul>
+<li>大于 33 的加载等级 <code>INACCESSIBLE</code> 不会让区块加载入内存，但世界生成会进行</li>
+<li>33 的加载等级称为 <code>BORDER</code>，仅有少量游戏逻辑会运行</li>
+<li>32 为 <code>TICKING</code>，除了对生物进行 tick 以外，大部分逻辑都会运行</li>
+<li>31 以下为 <code>ENTITY_TICKING</code>，意思是什么想必不需要多说</li>
+</ul>
+<p>游戏内与加载等级对应的是加载距离，算法是 <code>distance = 33 - level</code>，表达的字面意思就是「加载周围的多少个方块」；由于地形生成的存在，实际的加载距离会大于指定的距离。</p>
+<p>加载等级最大是 44，至于为什么是这个数字，我们一会儿再说。</p>
+<p>可以见得，Ticket 的加载等级越低，就会加载更大范围的区块，而区块的加载等级越低，区块进行的计算就会越多，而读者你这时说不定已经猜出了区块的加载计算规则了。</p>
+<h2 id="等级扩散-Level-Propagation"><a href="#等级扩散-Level-Propagation" class="headerlink" title="等级扩散 Level Propagation"></a>等级扩散 Level Propagation</h2><p>当一个 Ticket 被提供给某个区块后，它会向周围的八个区块扩散，加载等级逐渐上升。这个过程被称为 Propagation。</p>
+<p>假设我们往某一个区块提供了一个加载等级为 30 的 Ticket，那么这一片本身全部为 44 的区域，会变成这样：</p>
+<pre><code>   33   33   33   33   33   33   33 
+   33   32   32   32   32   32   33 
+   33   32   31   31   31   32   33 
+   33   32   31   30   31   32   33 
+   33   32   31   31   31   32   33 
+   33   32   32   32   32   32   33 
+   33   33   33   33   33   33   33 </code></pre><p>而等级换算成对应的区块位置类型，游戏就会按照规则计算区块中的活动。</p>
+<p>上面的内容足以描述游戏中的区块加载与卸载，但是对世界生成仍然不能清晰的描述：</p>
+<ul>
+<li>区块生成一定是比玩家的视距更远的，也就是说，<code>INACCESSIBLE</code> 等级的区块仍需更加细分。</li>
+<li>熟悉 Mod 开发的读者可能会知道，<code>IWorld</code> 接口的实现会有两个，分别是 <code>World</code> 和 <code>WorldGenRegion</code>，也就是说，世界生成和游戏运行的世界有一定差距，以至于需要使用两个实现来描述。</li>
+<li>类似的，<code>IChunk</code> 的主要实现同样有两个。</li>
+</ul>
+<p>所以我们可以挖深一些。</p>
+<h2 id="区块状态-ChunkStatus"><a href="#区块状态-ChunkStatus" class="headerlink" title="区块状态 ChunkStatus"></a>区块状态 ChunkStatus</h2><p>在 Minecraft 中，区块的实现有两种，分别是 <code>ChunkPrimer</code> 和 <code>Chunk</code>，或者可以称呼为 <code>PROTOCHUNK</code> 和 <code>LEVELCHUNK</code>。</p>
+<p>前者用于世界生成，而后者用于正常的游戏逻辑。</p>
+<p>Minecraft 的世界生成是分阶段的，我们可以想象，游戏先生成了地形，然后放置树，接着…. 区块状态用于表示，在区块完成生成之前的状态。</p>
+<p>游戏中共有 13 种区块状态：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>颜色</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>empty</td>
+<td><span style="color:#545454"> <strong>#545454</strong> </span></td>
+<td>表达一个空的区块</td>
+</tr>
+<tr>
+<td>structure_starts</td>
+<td><span style="color:#999999"> <strong>#999999</strong> </span></td>
+<td>计算生成结构的位置</td>
+</tr>
+<tr>
+<td>structure_references</td>
+<td><span style="color:#5F6191"> <strong>#5F6191</strong> </span></td>
+<td>保存上一步生成的结构位置</td>
+</tr>
+<tr>
+<td>biomes</td>
+<td><span style="color:#80B252"> <strong>#80B252</strong> </span></td>
+<td>生成生物群系并将它们保存</td>
+</tr>
+<tr>
+<td>noise</td>
+<td><span style="color:#D1D1D1"> <strong>#D1D1D1</strong> </span></td>
+<td>生成世界的基础地形，包括之前的结构</td>
+</tr>
+<tr>
+<td>surface</td>
+<td><span style="color:#726809"> <strong>#726809</strong> </span></td>
+<td>生成地形的表面，以及基岩</td>
+</tr>
+<tr>
+<td>carvers</td>
+<td><span style="color:#6D665C"> <strong>#6D665C</strong> </span></td>
+<td>「凿空」地形，也就是生成洞穴</td>
+</tr>
+<tr>
+<td>liquid_carvers</td>
+<td><span style="color:#303572"> <strong>#303572</strong> </span></td>
+<td>如上，不过是用液体凿空</td>
+</tr>
+<tr>
+<td>features</td>
+<td><span style="color:#21C600"> <strong>#21C600</strong> </span></td>
+<td>进行地形生成的 decoration 阶段</td>
+</tr>
+<tr>
+<td>light</td>
+<td><span style="color:#CCCCCC"> <strong>#CCCCCC</strong> </span></td>
+<td>计算区块的光照</td>
+</tr>
+<tr>
+<td>spawn</td>
+<td><span style="color:#F26060"> <strong>#F26060</strong> </span></td>
+<td>为区块生成最初的一些生物</td>
+</tr>
+<tr>
+<td>heightmaps</td>
+<td><strong>#EEEEEE</strong></td>
+<td>看起来什么也没做</td>
+</tr>
+<tr>
+<td>full</td>
+<td><strong>#FFFFFF</strong></td>
+<td>区块加载完成，从 <code>PROTOCHUNK</code> 转换为 <code>LEVELCHUNK</code></td>
+</tr>
+</tbody></table>
+<p>这些区块状态对应了世界生成的过程，同时它们按照表中的顺序排列；同时，它们各自依赖前一个状态，也就是说，我们请求一个 <code>full</code> 的区块时，这个区块的状态会依次经过 <code>empty</code>, <code>structure_starts</code> …</p>
+<p>以下是在 33 以上的加载等级对应的区块状态：</p>
+<table>
+<thead>
+<tr>
+<th align="left">加载等级</th>
+<th align="left">ChunkStatus</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">33-</td>
+<td align="left">full</td>
+</tr>
+<tr>
+<td align="left">34</td>
+<td align="left">features</td>
+</tr>
+<tr>
+<td align="left">35</td>
+<td align="left">liquid_carvers</td>
+</tr>
+<tr>
+<td align="left">36-43</td>
+<td align="left">structure_starts</td>
+</tr>
+<tr>
+<td align="left">44+</td>
+<td align="left">empty</td>
+</tr>
+</tbody></table>
+<p>可以看到，Minecraft 并不是沿着加载等级依次排列区块状态的，因此在世界加载时，颜色的显示就并没有那么五彩斑斓了，不过如果愿意，我们仍然可以在这里观察到若干种颜色。</p>
+<p><img src="loading_screen.png" alt></p>
+<p>可以看到，右边多出来的那三个区块，从上到下分别处于 <code>liquid_carvers</code>, <code>surface</code> 和 <code>biomes</code> 阶段。</p>
+<h2 id="Ticket-种类"><a href="#Ticket-种类" class="headerlink" title="Ticket 种类"></a>Ticket 种类</h2><p>Minecraft 中共有 8 种 <code>net.minecraft.world.server.TicketType</code>，它们分别是</p>
+<ul>
+<li><code>start</code>，用于出生点区块的加载，加载距离是 11 格，也就是 22 加载等级；由 43-22 得到 21，因此出生点的这个 Ticket 会在加载世界时一共加载 441 个区块<br>世界生成初始时会注册该 Ticket，世界加载的界面反应了该 Ticket 对区块造成的变化</li>
+<li><code>dragon</code>，在与末影龙战斗时提供给区块，加载 9 格距离</li>
+<li><code>player</code>，自然就是玩家加载区块的方法，加载等级 31<ul>
+<li>读者可能会问，玩家显然加载不止两格区块。实际上游戏会将玩家周围一段距离内的区块全部添加这个 Ticket，而这个距离与 <code>view-distance</code>（服务器）或渲染距离（客户端）有关</li>
+</ul>
+</li>
+<li><code>forced</code>，用于 <code>/forceload</code> 指令和出生点区块的强制加载</li>
+<li><code>light</code>，加载等级 34，在区块状态为 <code>light</code> 时提供给区块，将区块加载以便计算光照</li>
+<li><code>portal</code>，在生成或寻找（这也就包含了生物使用传送门）对应的传送门后提供给区块，加载距离 3，存活 300 游戏刻</li>
+<li><code>post_teleport</code>，将生物传送到对应区块后，将区块保持加载一小段时间（5 gt），这可以让 <code>/tp</code> 指令传送生物后，使生物有机会更新到达的区块</li>
+<li><code>unknown</code>，用于游戏内任意代码调用了 <code>getChunk</code> 后加载区块，比如 <code>getBlockState</code>，使区块加载 1 游戏刻以便获取区块信息</li>
+</ul>
+<p>需要注意的是，加载距离并不由 TicketType 指定，比如 <code>post_teleport</code> 在 <code>/tp</code> 指令使用时加载距离为 1，而其他情况下为 0</p>
+<h2 id="屁话多！如何使用？"><a href="#屁话多！如何使用？" class="headerlink" title="屁话多！如何使用？"></a>屁话多！如何使用？</h2><p>为世界的某个区块添加一个 Ticket 是再简单不过的事：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> net<span class="token punctuation">.</span>minecraft<span class="token punctuation">.</span>world<span class="token punctuation">.</span>server<span class="token punctuation">.</span>TicketType<span class="token punctuation">;</span>
+
+<span class="token keyword">this</span><span class="token punctuation">.</span>world<span class="token punctuation">.</span><span class="token function">getChunkProvider</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">registerTicket</span><span class="token punctuation">(</span>
+    TicketType<span class="token punctuation">.</span>DRAGON<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">ChunkPos</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">,</span> Unit<span class="token punctuation">.</span>INSTANCE
+<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>或许不限于原版的 TicketType，那么可以自行注册一个：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> net<span class="token punctuation">.</span>minecraft<span class="token punctuation">.</span>world<span class="token punctuation">.</span>server<span class="token punctuation">.</span>TicketType<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> TicketType<span class="token operator">&lt;</span>Unit<span class="token operator">></span> CUSTOM <span class="token operator">=</span> 
+    TicketType<span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token string">"some_ticket"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">20</span> <span class="token comment" spellcheck="true">/* 可选的存活时间 */</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>顺便一提，<code>Unit</code> 是 Mojang 的工具类，用来表示单元值，姑且可以理解为 <code>void</code>。</p>
+<p>还值得一提的是，加入游戏的 <code>Ticket</code> 是不持久化的，也就是说它们会随着游戏重启而消失。</p>
+<p>Bukkit 平台提供了另外两种 <code>TicketType</code>，看起来是这样的：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> TicketType<span class="token operator">&lt;</span>Unit<span class="token operator">></span> PLUGIN <span class="token operator">=</span>
+    <span class="token function">create</span><span class="token punctuation">(</span><span class="token string">"plugin"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> TicketType<span class="token operator">&lt;</span>org<span class="token punctuation">.</span>bukkit<span class="token punctuation">.</span>plugin<span class="token punctuation">.</span>Plugin<span class="token operator">></span> PLUGIN_TICKET <span class="token operator">=</span>
+    <span class="token function">create</span><span class="token punctuation">(</span><span class="token string">"plugin_ticket"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> a<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">compareTo</span><span class="token punctuation">(</span>b<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>前一种用于实现高版本的 <code>chunk-gc.period-in-ticks</code> 设置，具体细节就不过多说明了。</p>
+<p>后一种则是提供给插件的，用于强制加载区块的方法，具体的 API 可以如下调用：</p>
+<pre class="line-numbers language-java"><code class="language-java">World world <span class="token operator">=</span> Bukkit<span class="token punctuation">.</span><span class="token function">getWorld</span><span class="token punctuation">(</span><span class="token string">"..."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+world<span class="token punctuation">.</span><span class="token function">addPluginTicket</span><span class="token punctuation">(</span>chunkX<span class="token punctuation">,</span> chunkZ<span class="token punctuation">,</span> plugin<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这会给对应区块一个加载等级 31 的 Ticket，以防止区块被卸载。</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>Mojang 实际上提供了一套显示世界区块的加载等级和位置类型的渲染器，不过不能通过游戏内的方式启用，可以手动调用 <code>net.minecraft.client.renderer.debug.ChunkInfoDebugRenderer</code> 来渲染。</p>
+<p><img src="debug_renderer.png" alt></p>
+<p>由此图可以轻松找到加载等级 22 的区块为我们需要的加载区块。</p>
+<p>由于玩家会加载区块，因此我们需要设置游戏规则 <code>/gamerule spectatorsGenerateChunks false</code>，同时切换到旁观者模式，以阻止玩家自身的 Ticket。</p>
+<p><img src="chunk_border.png" alt></p>
+<p>由此可以看到一个 Ticket 的加载边界，位置等级逐渐降低。</p>
+<h2 id="关于谁加载了区块"><a href="#关于谁加载了区块" class="headerlink" title="关于谁加载了区块"></a>关于谁加载了区块</h2><p>其实本文到此本应结束了，但是在举办 TeaCon 2020 时，我们正好遇到了和这篇文章或许扯得上关系的一件事，因此一并在此记下。</p>
+<p>事件的经过可以查看 sj 博客的<a href="https://blog.seraphjack.top/posts/2020/08/teacon-2020-server-attack/" target="_blank" rel="noopener">这篇文章</a>。</p>
+<p>攻击刚刚开始时，我们发现服务器卡死，线程转储指向了 Chunk IO Worker，也就是说区块加载卡住了。同时世界文件夹中出现了大量数值特别大的 <code>.mca</code> 文件，因此可以判定有人在恶意利用漏洞加载区块。</p>
+<p>但是 Forge 提供的加载区块事件是在 Chunk IO Worker 上调用的，因此异常栈信息并不能告诉我们是谁请求了这次区块加载。</p>
+<p>经过研究发现，区块的加载等级更新逻辑位于 <code>ChunkHolder#processUpdates</code>，并且是同步调用的，因此假如可以在这里设置一个断点，那么就可以找到哪些逻辑在加载区块了。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">processUpdates</span><span class="token punctuation">(</span>ChunkManager chunkManagerIn<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+   ChunkStatus chunkstatus <span class="token operator">=</span> <span class="token function">getChunkStatusFromLevel</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>prevChunkLevel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   ChunkStatus chunkstatus1 <span class="token operator">=</span> <span class="token function">getChunkStatusFromLevel</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>chunkLevel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">boolean</span> flag <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>prevChunkLevel <span class="token operator">&lt;=</span> ChunkManager<span class="token punctuation">.</span>MAX_LOADED_LEVEL<span class="token punctuation">;</span>
+   <span class="token keyword">boolean</span> flag1 <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>chunkLevel <span class="token operator">&lt;=</span> ChunkManager<span class="token punctuation">.</span>MAX_LOADED_LEVEL<span class="token punctuation">;</span>
+   ChunkHolder<span class="token punctuation">.</span>LocationType chunkholder$locationtype <span class="token operator">=</span> <span class="token function">getLocationTypeFromLevel</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>prevChunkLevel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   ChunkHolder<span class="token punctuation">.</span>LocationType chunkholder$locationtype1 <span class="token operator">=</span> <span class="token function">getLocationTypeFromLevel</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>chunkLevel<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span>flag<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// unload</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">boolean</span> flag5 <span class="token operator">=</span> chunkholder$locationtype<span class="token punctuation">.</span><span class="token function">isAtLeast</span><span class="token punctuation">(</span>ChunkHolder<span class="token punctuation">.</span>LocationType<span class="token punctuation">.</span>BORDER<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">boolean</span> flag6 <span class="token operator">=</span> chunkholder$locationtype1<span class="token punctuation">.</span><span class="token function">isAtLeast</span><span class="token punctuation">(</span>ChunkHolder<span class="token punctuation">.</span>LocationType<span class="token punctuation">.</span>BORDER<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">this</span><span class="token punctuation">.</span>accessible <span class="token operator">|=</span> flag6<span class="token punctuation">;</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>flag5 <span class="token operator">&amp;&amp;</span> flag6<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>borderFuture <span class="token operator">=</span> chunkManagerIn<span class="token punctuation">.</span><span class="token function">func_222961_b</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">chain</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>borderFuture<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">if</span> <span class="token punctuation">(</span>flag5 <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>flag6<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// unload</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">boolean</span> flag7 <span class="token operator">=</span> chunkholder$locationtype<span class="token punctuation">.</span><span class="token function">isAtLeast</span><span class="token punctuation">(</span>ChunkHolder<span class="token punctuation">.</span>LocationType<span class="token punctuation">.</span>TICKING<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">boolean</span> flag2 <span class="token operator">=</span> chunkholder$locationtype1<span class="token punctuation">.</span><span class="token function">isAtLeast</span><span class="token punctuation">(</span>ChunkHolder<span class="token punctuation">.</span>LocationType<span class="token punctuation">.</span>TICKING<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>flag7 <span class="token operator">&amp;&amp;</span> flag2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>tickingFuture <span class="token operator">=</span> chunkManagerIn<span class="token punctuation">.</span><span class="token function">func_219179_a</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">chain</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>tickingFuture<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">if</span> <span class="token punctuation">(</span>flag7 <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>flag2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// unload</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">boolean</span> flag3 <span class="token operator">=</span> chunkholder$locationtype<span class="token punctuation">.</span><span class="token function">isAtLeast</span><span class="token punctuation">(</span>ChunkHolder<span class="token punctuation">.</span>LocationType<span class="token punctuation">.</span>ENTITY_TICKING<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">boolean</span> flag4 <span class="token operator">=</span> chunkholder$locationtype1<span class="token punctuation">.</span><span class="token function">isAtLeast</span><span class="token punctuation">(</span>ChunkHolder<span class="token punctuation">.</span>LocationType<span class="token punctuation">.</span>ENTITY_TICKING<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>flag3 <span class="token operator">&amp;&amp;</span> flag4<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>entityTickingFuture <span class="token operator">!=</span> UNLOADED_CHUNK_FUTURE<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+         <span class="token keyword">throw</span> <span class="token punctuation">(</span>IllegalStateException<span class="token punctuation">)</span>Util<span class="token punctuation">.</span><span class="token function">pauseDevMode</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">IllegalStateException</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span>
+
+      <span class="token keyword">this</span><span class="token punctuation">.</span>entityTickingFuture <span class="token operator">=</span> chunkManagerIn<span class="token punctuation">.</span><span class="token function">func_219188_b</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>pos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">chain</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>entityTickingFuture<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">if</span> <span class="token punctuation">(</span>flag3 <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>flag4<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token comment" spellcheck="true">// unload</span>
+   <span class="token punctuation">}</span>
+
+   <span class="token keyword">this</span><span class="token punctuation">.</span>field_219327_v<span class="token punctuation">.</span><span class="token function">func_219066_a</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>pos<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token operator">:</span><span class="token operator">:</span>func_219281_j<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>chunkLevel<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token operator">:</span><span class="token operator">:</span>func_219275_d<span class="token punctuation">)</span><span class="token punctuation">;</span>
+   <span class="token keyword">this</span><span class="token punctuation">.</span>prevChunkLevel <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>chunkLevel<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个方法在区块的加载等级变化后，更新了 <code>prevChunkLevel</code> 的值，同时向区块安排任务。</p>
+<p>前文讲到，在调用 <code>getBlockState</code> 一类的方法时，游戏会为没有加载的区块提供一个 <code>unknown</code> 的 Ticket，因此这类方法调用如果加载了区块，就应该会反应在这个方法。</p>
+<p>接下来就简单了，在这里打一个断点，输出一下堆栈信息，轻松的就发现了 TheOneProbe 的漏洞。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>区块加载系统在 1.14 迎来了较大的变化，Mojang 以一种更加合理的方式来管理区块，大部分老版本用于卸载不需要的区块的服务端插件也逐渐退出了历史舞台。</p>
+<p>如果你对世界生成中的区块生成有兴趣，可以查看 Yaossg 的<a href="https://www.mcbbs.net/thread-846195-1-1.html" target="_blank" rel="noopener">这篇文章</a>，尽管是 1.13 的，但是仍然有价值一读。</p>
+<p>同时 Yaossg 对世界生成的过程也做了较为详细的解释，具体可以查看<a href="https://github.com/Yaossg/biome" target="_blank" rel="noopener">这个仓库</a>。</p>
+<p>官方 Wiki 中的<a href="https://minecraft-zh.gamepedia.com/%E5%8C%BA%E5%9D%97" target="_blank" rel="noopener">区块</a>一节也对这个系统进行了一定的讲解，尽管 Wiki 会更注重游戏细节而非技术细节。</p>
+<p>感谢最初介绍这个系统的 Drovolon，以及他的<a href="https://gist.github.com/Drovolon/24bfaae00d57e7a8ca64b792e14fa7c6" target="_blank" rel="noopener">文章</a>。官方 Wiki 大部分内容来源于此。</p>
+</div></div><!--.post-main.post-comment--><div id="gitalk-container"></div><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css"><script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script><script>const gitalk = new Gitalk({
+    clientID: '1b4c00731894d12d4568',
+    clientSecret: '1fa321199cc198f80203716d073c8f2ff2dec849',
+    repo: 'blog',
+    owner: 'IzzelAliz',
+    admin: ['IzzelAliz'],
+    id: location.pathname,
+    distractionFreeMode: false,
+    proxy: 'https://blog-api.izzel.io/?https://github.com/login/oauth/access_token'
+})
+gitalk.render('gitalk-container')</script><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

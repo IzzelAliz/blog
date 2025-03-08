@@ -1,0 +1,49 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>关于 Mixin 升级到 0.8 和 ModLauncher 的那些事 | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2020-02-06</div></div></div><div class="container post-header"><h1>关于 Mixin 升级到 0.8 和 ModLauncher 的那些事</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#MixinConnector"><span class="toc-number">1.</span> <span class="toc-text">MixinConnector</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ModLauncher-支持"><span class="toc-number">2.</span> <span class="toc-text">ModLauncher 支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他特性"><span class="toc-number">3.</span> <span class="toc-text">其他特性</span></a></li></ol></details></div><div class="container post-content"><p>仿生 ModLauncher 不会梦到 LaunchWrapper</p>
+<h2 id="MixinConnector"><a href="#MixinConnector" class="headerlink" title="MixinConnector"></a>MixinConnector</h2><p>从 1.13 起，Forge 抛弃了原来的 LauncherWrapper，改用了 cpw 编写的 ModLauncher，也就是说，Mixin 原来基于 Tweaker 的那一套不能用了，为此，Mixin 引入了 <code>MixinConnector</code>。</p>
+<p>首先，你需要让一个类实现 <code>IMixinConnector</code>，比如：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> org<span class="token punctuation">.</span>spongepowered<span class="token punctuation">.</span>asm<span class="token punctuation">.</span>mixin<span class="token punctuation">.</span>connect<span class="token punctuation">.</span>IMixinConnector<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ExampleConnector</span> <span class="token keyword">implements</span> <span class="token class-name">IMixinConnector</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">connect</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后在其中添加需要添加的 Mixin 配置文件：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">import</span> org<span class="token punctuation">.</span>spongepowered<span class="token punctuation">.</span>asm<span class="token punctuation">.</span>mixin<span class="token punctuation">.</span>Mixins<span class="token punctuation">;</span>
+<span class="token keyword">import</span> org<span class="token punctuation">.</span>spongepowered<span class="token punctuation">.</span>asm<span class="token punctuation">.</span>mixin<span class="token punctuation">.</span>connect<span class="token punctuation">.</span>IMixinConnector<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ExampleConnector</span> <span class="token keyword">implements</span> <span class="token class-name">IMixinConnector</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">connect</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Mixins<span class="token punctuation">.</span><span class="token function">addConfiguration</span><span class="token punctuation">(</span><span class="token string">"mixins.example.json"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最后，你需要在 MANIFEST.MF 文件中，指定这个 jar 文件使用的 Mixin Connector：</p>
+<p><code>文件 META-INF/MANIFEST.MF</code></p>
+<pre><code>Manifest-Version: 1.0
+MixinConnector: ExampleConnector
+</code></pre><p>记得在最后空一行。</p>
+<p>当然，也可以使用构建工具，比如 Gradle：</p>
+<pre class="line-numbers language-groovy"><code class="language-groovy">jar <span class="token punctuation">{</span>
+    manifest<span class="token operator">.</span><span class="token function">attributes</span><span class="token punctuation">(</span>
+        <span class="token string">'MixinConnector'</span><span class="token punctuation">:</span> <span class="token string">'ExampleConnector'</span>
+    <span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>剩余的内容就是普通的 Mixin 编写了，包括编写 Mixin 类，配置文件。</p>
+<h2 id="ModLauncher-支持"><a href="#ModLauncher-支持" class="headerlink" title="ModLauncher 支持"></a>ModLauncher 支持</h2><p>当然，截至本文发出时，ModLauncher 生态仍然没有官方的 Mixin 支持，因此在 ModLauncher 引导 Mixin 需要一点奇淫巧计。</p>
+<p>比如我的项目 <a href="https://github.com/IzzelAliz/MixinLoader" target="_blank" rel="noopener">https://github.com/IzzelAliz/MixinLoader</a> ，下载之后扔到 mods 文件夹，你的 Forge 就有了 Mixin 环境。</p>
+<h2 id="其他特性"><a href="#其他特性" class="headerlink" title="其他特性"></a>其他特性</h2><p>Mixin 0.8 带来了新的 <code>tsrg</code> 混淆表格式支持，以及 MixinGradle 对 ForgeGradle 3+ 的支持。升级至 MixinGradle 0.7 就可以快乐生成 <code>refmap</code> 了。</p>
+<p>同时，现在 Mixin Config 可以继承自其他的，只需要</p>
+<p><code>文件 mixins.example.json</code></p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"parent"</span><span class="token operator">:</span> <span class="token string">"mixins.parent.json"</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>更多特性可以阅读官方的 <a href="https://github.com/SpongePowered/Mixin/wiki/Release-Notes---Mixin-0.8" target="_blank" rel="noopener">Release note</a></p>
+</div></div><!--.post-main.post-comment--><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

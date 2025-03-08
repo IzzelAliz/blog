@@ -1,0 +1,96 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>聊聊 Forge 工具链 | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2022-09-07</div></div></div><div class="container post-header"><h1>聊聊 Forge 工具链</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Forge-本体"><span class="toc-number">1.</span> <span class="toc-text">Forge 本体</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#编译期"><span class="toc-number">2.</span> <span class="toc-text">编译期</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ForgeFlower"><span class="toc-number">2.1.</span> <span class="toc-text">ForgeFlower</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MCPConfig"><span class="toc-number">2.2.</span> <span class="toc-text">MCPConfig</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MCP-映射表格式"><span class="toc-number">2.3.</span> <span class="toc-text">MCP 映射表格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MappingVerifier"><span class="toc-number">2.4.</span> <span class="toc-text">MappingVerifier</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SpecialSource"><span class="toc-number">2.5.</span> <span class="toc-text">SpecialSource</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ForgeAutoRenamingTool"><span class="toc-number">2.6.</span> <span class="toc-text">ForgeAutoRenamingTool</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SrgUtils"><span class="toc-number">2.7.</span> <span class="toc-text">SrgUtils</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Srg2Source"><span class="toc-number">2.8.</span> <span class="toc-text">Srg2Source</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#artifactural"><span class="toc-number">2.9.</span> <span class="toc-text">artifactural</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#AccessTransformers"><span class="toc-number">2.10.</span> <span class="toc-text">AccessTransformers</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JarCompatibilityChecker"><span class="toc-number">2.11.</span> <span class="toc-text">JarCompatibilityChecker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ForgeGradle"><span class="toc-number">2.12.</span> <span class="toc-text">ForgeGradle</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#运行时"><span class="toc-number">3.</span> <span class="toc-text">运行时</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#bootstraplauncher-BSL"><span class="toc-number">3.1.</span> <span class="toc-text">bootstraplauncher (BSL)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#securejarhandler-SJH"><span class="toc-number">3.2.</span> <span class="toc-text">securejarhandler (SJH)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#modlauncher-ML"><span class="toc-number">3.3.</span> <span class="toc-text">modlauncher (ML)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JarJar"><span class="toc-number">3.4.</span> <span class="toc-text">JarJar</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#coremods"><span class="toc-number">3.5.</span> <span class="toc-text">coremods</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#eventbus"><span class="toc-number">3.6.</span> <span class="toc-text">eventbus</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展阅读"><span class="toc-number">4.</span> <span class="toc-text">拓展阅读</span></a></li></ol></details></div><div class="container post-content"><p><a href="https://github.com/MinecraftForge/MinecraftForge" target="_blank" rel="noopener">MinecraftForge</a> 由十数个项目组合而成，本文对此做一个简单的介绍。</p>
+<p>这篇文章以 Minecraft 1.19.2，Forge 43.1.0 为例进行分析。</p>
+<p>你可以在<a href="https://files.minecraftforge.net/project_index.html" target="_blank" rel="noopener">这里</a>清晰明了的看到 Forge 的所有项目。</p>
+<h2 id="Forge-本体"><a href="#Forge-本体" class="headerlink" title="Forge 本体"></a>Forge 本体</h2><p>Forge 可以简单地定义为一个 Mod 加载器和一套帮助 Mod 兼容的 API。后者，也就是这套 API 并不是本文关注的重点，虽然不可避免地会讲到一些。</p>
+<p>回想一下你是如何安装 Mod 的，就可以很容易地总结出 Mod 加载器是干什么的：把 <code>mods</code> 文件夹里的 JAR 文件加载到游戏里。</p>
+<h2 id="编译期"><a href="#编译期" class="headerlink" title="编译期"></a>编译期</h2><p>Forge 的开发工作依赖于一系列项目。</p>
+<h3 id="ForgeFlower"><a href="#ForgeFlower" class="headerlink" title="ForgeFlower"></a>ForgeFlower</h3><p>这是一个 Java 反编译器。</p>
+<p>Forge 项目对 FernFlower 的修改，修复了一些怪异和错误的编译结果，并且增加了多线程反编译的支持，因此比其他（比如 Spigot）的反编译快了许多。</p>
+<h3 id="MCPConfig"><a href="#MCPConfig" class="headerlink" title="MCPConfig"></a>MCPConfig</h3><p>MCP 项目唯一的遗产。MCPConfig 用于提供包括：</p>
+<ul>
+<li>混淆名称到 srg 名的映射，用 TSRG 格式的文件保存</li>
+<li>反编译后的代码文件的修复，用 patch 文件保存</li>
+</ul>
+<p>在内的功能。</p>
+<h3 id="MCP-映射表格式"><a href="#MCP-映射表格式" class="headerlink" title="MCP 映射表格式"></a>MCP 映射表格式</h3><p>MCP 项目同时带有一个映射表，是社区维护的，当然现在已经停止维护了。</p>
+<p>这个映射表导出之后，是一个 zip 压缩包，里面可以含有包含方法、字段、参数的 csv 文件。</p>
+<p>例如，ForgeGradle 生成的 1.19.2 官方映射表格式为：</p>
+<pre><code>mapping-1.19.2-official.zip
+  | fields.csv
+  \ methods.csv</code></pre><p>csv 文件格式类似：</p>
+<pre><code>searge,name,side,desc
+m_100003_,lambda$init$1,0,
+m_100013_,updateList,0,</code></pre><p>含有 searge 名，翻译名，仅客户端/服务端的信息和 Javadoc 注释。</p>
+<h3 id="MappingVerifier"><a href="#MappingVerifier" class="headerlink" title="MappingVerifier"></a>MappingVerifier</h3><p>检查一个映射表会不会破坏继承关系。</p>
+<p>这里的破坏是什么呢？很简单，如果调用一个方法，被 remap 之后最终调用的实现不一样，继承关系就被破坏了。</p>
+<p>考虑以下情况：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">A</span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">foo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"A"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">interface</span> <span class="token class-name">B</span> <span class="token punctuation">{</span>
+    <span class="token keyword">void</span> <span class="token function">foo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">C</span> <span class="token keyword">extends</span> <span class="token class-name">A</span> <span class="token keyword">implements</span> <span class="token class-name">B</span> <span class="token punctuation">{</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>此时接口 B 的 <code>foo()</code> 通过子类 C 的父类 A 间接实现了；而如果一个映射错误的把 <code>A.foo()</code> 和 <code>B.foo()</code> 分配了两个不一样的名字，那么调用 <code>B.foo()</code> 就不会正确的调用 A 中的实现，继承被破坏了。</p>
+<p>当然这是最为复杂的一种情形，也会有把 <code>String foo()</code> 映射成 <code>String toString()</code> 这样错误覆盖了继承等等。</p>
+<h3 id="SpecialSource"><a href="#SpecialSource" class="headerlink" title="SpecialSource"></a>SpecialSource</h3><p><a href="https://github.com/md-5/SpecialSource" target="_blank" rel="noopener">https://github.com/md-5/SpecialSource</a></p>
+<p>一个根据某个映射表对 JAR 进行 remap 的工具。</p>
+<p>基本上用法就是</p>
+<pre><code>java -jar SpecialSource.jar -i in.jar -o out.jar -m mappings.srg</code></pre><p>这个工具是 md-5 写给 Spigot 项目的，Forge 一直用到了大概 2021 年。</p>
+<p>同类型工具里支持格式大概是最多的，也很好用。</p>
+<h3 id="ForgeAutoRenamingTool"><a href="#ForgeAutoRenamingTool" class="headerlink" title="ForgeAutoRenamingTool"></a>ForgeAutoRenamingTool</h3><p>平替 SpecialSource 的工具。这个名字的缩写大概也是 LexManos 的恶趣味。large lols</p>
+<p>能平替 SpecialSource 的工具还有 CadixDev 的 <a href="https://github.com/LexManos/Vignette" target="_blank" rel="noopener">Vignette</a>，Forge 似乎有过用这个的意愿，后来又换掉了。</p>
+<h3 id="SrgUtils"><a href="#SrgUtils" class="headerlink" title="SrgUtils"></a>SrgUtils</h3><p>对映射表这个概念做抽象形成的类库，也有 remap 的功能。</p>
+<p>其实不是那么好用，比较好用的是 CadixDev 的 <a href="https://github.com/CadixDev/Lorenz" target="_blank" rel="noopener">Lorenz</a>。</p>
+<h3 id="Srg2Source"><a href="#Srg2Source" class="headerlink" title="Srg2Source"></a>Srg2Source</h3><p>前面的 SpecialSource 等都是对已经编译过的 .class 文件进行 remap，这个项目是对 Java 源文件进行 remap。</p>
+<p>项目是基于 Eclipse JDT 项目开发的，基本可以算作一个修改过的编译器。</p>
+<p>比较不好用，因为要生成一个 RangeMap 用于存储需要 remap 的符号的位置。比较好用的还是 CadixDev 那边的 Mercury，不需要生成中间文件。</p>
+<h3 id="artifactural"><a href="#artifactural" class="headerlink" title="artifactural"></a>artifactural</h3><p>一个支持 Artifact Transform 的 Gradle 插件。</p>
+<p>什么意思呢？在 Gradle 5.5 发布之前，Gradle 并不支持对依赖进行例如反混淆的修改。这个插件提供了动态生成和修改一个依赖的功能，Forge 用来生成 MCPConfig 处理过的 MC Jar 和经过反混淆的依赖。</p>
+<p>内部的实现方式应该是实现了一个 Repository 之类的接口。</p>
+<p>Forge 似乎有过迁移到 Gradle Artifact Transform 这套系统上，但是没有后话了。</p>
+<h3 id="AccessTransformers"><a href="#AccessTransformers" class="headerlink" title="AccessTransformers"></a>AccessTransformers</h3><p>编译器（和运行时）修改字段和方法访问级别的工具。</p>
+<p>唯一不好的一点就是修改了 AT 文件之后需要重新反编译。</p>
+<h3 id="JarCompatibilityChecker"><a href="#JarCompatibilityChecker" class="headerlink" title="JarCompatibilityChecker"></a>JarCompatibilityChecker</h3><p>检查两个 JAR 文件之间的字节码兼容，也就是不会有 LinkageError 和 IncompatibleClassChangeError 之类的错误，现在用来检验 AT 有效性。</p>
+<p>可能是 Forge 为引入更多编译期字节码变换（接口注入？）做的准备。</p>
+<h3 id="ForgeGradle"><a href="#ForgeGradle" class="headerlink" title="ForgeGradle"></a>ForgeGradle</h3><p>Forge 的 Gradle 插件。</p>
+<p>使用了上面的项目，帮助开发者引入反编译反混淆后的 Minecraft 依赖。</p>
+<h2 id="运行时"><a href="#运行时" class="headerlink" title="运行时"></a>运行时</h2><h3 id="bootstraplauncher-BSL"><a href="#bootstraplauncher-BSL" class="headerlink" title="bootstraplauncher (BSL)"></a>bootstraplauncher (BSL)</h3><p>引导 modlauncher 的前置项目，基本上就是把 modlauncher 需要的依赖全部加载成 Java 模块，然后调用 modlauncher 主类。</p>
+<h3 id="securejarhandler-SJH"><a href="#securejarhandler-SJH" class="headerlink" title="securejarhandler (SJH)"></a>securejarhandler (SJH)</h3><p>提供了多个功能的类库。</p>
+<p>提供 JAR 签名验证支持。Java 自带的 zipfs 不支持 JAR 签名验证（毕竟不是 jarfs），但是 cpw 等人认为需要支持这个功能。最终的实现是反射调用 JarFile 的内部签名验证实现。</p>
+<p>为 JPMS 提供一个专用的类加载器，主要的类是 ModuleClassLoader。</p>
+<p>提供一个 UnionFileSystem，可以把多个文件系统组合在一起，应该就是模仿 Docker 使用的文件系统。</p>
+<h3 id="modlauncher-ML"><a href="#modlauncher-ML" class="headerlink" title="modlauncher (ML)"></a>modlauncher (ML)</h3><p>模组加载器，提供在类加载期进行字节码增强功能，同时也负责 Minecraft 的引导。理论上来说，ML 支持运行任何 Java 程序。</p>
+<p>modlauncher 下一共有四个 ModuleLayer，分别是：</p>
+<ul>
+<li>BOOT，也就是 BSL 里的那个模块。</li>
+<li>PLUGIN，供一个 <code>ILaunchPluginService</code> 接口作为 Java SPI 使用，暴露给 Forge 自身。AccessTransformer 和 Mixin 之类的东西都是以这个实现功能。</li>
+<li>SERVICE，主要供 <code>ITransformationService</code>、<code>IModLocator</code> 和 <code>IDependencyLocator</code> 接口使用，暴露给 Modder，可以使用这个 Layer 进行字节码增强操作。</li>
+<li>GAME，运行 Minecraft 和模组的 Layer，唯一一个支持字节码被增强的。</li>
+</ul>
+<p>其中 PLUGIN 和 SERVICE 都只能访问自身和 BOOT 中的类，GAME 可以访问所有的类，以此进行类加载隔离。</p>
+<p>Launch target 这个概念也是在 ML 里提供的，是一个 <code>ILaunchHandlerService</code> SPI，在 Forge 中用来启动不同的环境，比如客户端、服务端、GameTest、Data Generator 的开发环境和生产环境。</p>
+<p>ML 是在 Minecraft 1.13 Forge 工具链大更新时期诞生的项目，解决了 LaunchWrapper 不支持 Java 9 以上版本的问题。</p>
+<p>2020 年（Minecraft 1.17）以前，ML 并没有集成 JPMS 支持，也没有对 LaunchPlugin 和 Transformer 进行隔离。后来的 SJH 项目实际上是从 ML 拆分出去的。</p>
+<h3 id="JarJar"><a href="#JarJar" class="headerlink" title="JarJar"></a>JarJar</h3><p>实现了 Jar in Jar 文件系统，用于 Forge Mod 的依赖加载。</p>
+<p>实际上实现没有特别复杂，是基于路径进行转换再代理到 zipfs。</p>
+<h3 id="coremods"><a href="#coremods" class="headerlink" title="coremods"></a>coremods</h3><p>实现了一套基于 Nashorn JS 的字节码修改系统。</p>
+<p>这套系统解决了 1.12 时代不小心在 coremod 类里引用 Minecraft 类的问题，因为对类加载做了严格隔离。使用这套系统的 JS 通过类加载器限制只能引用指定的几个 ASM 类和指定的几个基础 Java 包。</p>
+<p>就是太难用了，也没有补全。</p>
+<p>在 ModLauncher 升级到 JPMS 和几个 ModuleLayer 的隔离机制后，这套系统的初衷也不成立了。</p>
+<h3 id="eventbus"><a href="#eventbus" class="headerlink" title="eventbus"></a>eventbus</h3><p>实现了 Forge 的事件总线。</p>
+<p>具体实现是基于 ASM 生成调用类，性能比较好。</p>
+<p>这套系统的实现非常依赖 context classloader，如果没有设置就会有一些莫名其妙的 NoClassDefFoundError。这套系统也只能在 GAME Layer 的那个类加载器环境里使用，如果模组创建了一个子类加载器，也是不能用的。</p>
+<p>在我看来完全可以迁移到 MethodHandles.Lookup 的 defineHiddenClass 去。</p>
+<h2 id="拓展阅读"><a href="#拓展阅读" class="headerlink" title="拓展阅读"></a>拓展阅读</h2><p>我在<a href="/2021/11/13/how-to-minecraft-server/">另一篇文章</a>里写了一些关于服务端的实现原理。</p>
+</div></div><!--.post-main.post-comment--><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

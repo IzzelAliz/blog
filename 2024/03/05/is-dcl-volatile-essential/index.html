@@ -1,0 +1,183 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>Java 双重锁定模式真的需要 volatile 吗？ | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2024-03-05</div></div></div><div class="container post-header"><h1>Java 双重锁定模式真的需要 volatile 吗？</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#volatile-做了什么？"><span class="toc-number">1.</span> <span class="toc-text">volatile 做了什么？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#损坏的-DCL-模式？"><span class="toc-number">1.1.</span> <span class="toc-text">损坏的 DCL 模式？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#但是也许我们不一定需要-volatile"><span class="toc-number">2.</span> <span class="toc-text">但是也许我们不一定需要 volatile</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#附录"><span class="toc-number">3.</span> <span class="toc-text">附录</span></a></li></ol></details></div><div class="container post-content"><p>作为 Java 面试八股常见问题之一，单例模式怎么写自然有很多说法，比如下面这种就是天然的单例模式：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">enum</span> Singleton <span class="token punctuation">{</span>
+    <span class="token function">INSTANCE</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">int</span> answer<span class="token punctuation">;</span>
+
+    <span class="token function">Singleton</span><span class="token punctuation">(</span><span class="token keyword">int</span> answer<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>answer <span class="token operator">=</span> answer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getAnswer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>answer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>但是如果在面试，面试官大概率是不会满意这份代码的。令人满意的代码，通常是下面这份双重检查锁定式的单例实现：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Singleton</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">volatile</span> Singleton INSTANCE<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Singleton <span class="token function">getInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Singleton instance <span class="token operator">=</span> INSTANCE<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>instance <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>Singleton<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>INSTANCE <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    INSTANCE <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Singleton</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> instance<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">int</span> answer<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">Singleton</span><span class="token punctuation">(</span><span class="token keyword">int</span> answer<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>answer <span class="token operator">=</span> answer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getAnswer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>answer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这份代码无疑是正确的，<code>synchronized</code> 保证了单例不会被重复实例化，<code>volatile</code> 保证了 <code>INSTANCE</code> 对其他线程可见。但是如果去掉 <code>volatile</code> 呢？</p>
+<h2 id="volatile-做了什么？"><a href="#volatile-做了什么？" class="headerlink" title="volatile 做了什么？"></a>volatile 做了什么？</h2><p>在去掉 <code>volatile</code> 之后，如果我们并发的调用 <code>Singleton.getInstance().getAnswer()</code>，可能会得到 <code>42</code>，以及 <code>0</code>。解释这个结果，需要介绍一点 Java 内存模型的知识。</p>
+<p>对于并发代码，我们会关注的是读写的同步：我们希望能读到”在此之前应当已经写入的东西”，不要读到”未来才会发生的东西”，但是在复杂的现代计算机系统中，这并不是一件简单的事。在硬件上，乱序执行会导致读写的顺序改变；软件上，编译器会优化读写，相互无依赖的读写可能以任意顺序进行。</p>
+<p>如何获得确定的执行顺序呢？Java 内存模型通过一系列 <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html#jls-17.4.5" target="_blank" rel="noopener">happens-before 顺序</a>约束执行顺序。如果我们有两个操作 x, y （操作 action，比如读变量、写变量、锁同步）满足 happens-before 规则，那么程序上可以认为 y 操作进行时可以观察到 x 的写入，记作 <code>hb(x, y)</code>。</p>
+<p>部分顺序如下（原始定义更为复杂，此处已经化简过）：</p>
+<ul>
+<li>x y 有同步关系，则有 hb(x, y)<ul>
+<li>对一个 volatile 变量 v 写的操作在后续对 v 的读操作前</li>
+<li>释放锁的操作在后续锁定同一个锁的操作前</li>
+</ul>
+</li>
+<li>传递性，即如果 hb(x, y) 且 hb(y, z)，那么 hb(x, z)</li>
+</ul>
+<p>没有定义 happens before 的情形，就可能观察到任意的顺序。例如，线程 A 按顺序写入 a b 两个普通变量，但是线程 B 不一定能观察到 a b 按顺序写入了，相反，线程 B 可能只能看到 b 被写入，但是 a 尚未写入。这种情形是最为普遍的未同步情景。</p>
+<p>回到刚刚的代码，我们把不包含 volatile 的版本抽象成一串操作：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Singleton</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> Singleton INSTANCE<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Singleton <span class="token function">getInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Singleton instance <span class="token operator">=</span> INSTANCE<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// a: 读取 INSTANCE</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>instance <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>Singleton<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">// b: 对 Singleton.class 上锁</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>INSTANCE <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">// c: 读取 INSTANCE</span>
+                    INSTANCE <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Singleton</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// d: 写入 INSTANCE</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span> <span class="token comment" spellcheck="true">// e: 对 Singleton.class 解锁</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> instance<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">int</span> answer<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">Singleton</span><span class="token punctuation">(</span><span class="token keyword">int</span> answer<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>answer <span class="token operator">=</span> answer<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// f: 写入 answer</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getAnswer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>answer<span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// g: 读取 answer</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>我们期望最终的结果是，两个线程调用 <code>getInstance().getAnswer()</code> 都返回 42，假设两个线程的操作分别为 a1, a2, b1, b2 …，，为了方便我们将 hb(x, y) 记作 x &lt; y，那么有：</p>
+<ul>
+<li>假设线程 1 首先抢到对 Singleton.class 的锁</li>
+<li>线程内的操作如下<ul>
+<li>a1 &lt; b1 &lt; c1 &lt; f1 &lt; d1 &lt; e1 &lt; g1</li>
+<li>a2 &lt; b2 &lt; c2 &lt; f2 &lt; d2 &lt; e2 &lt; g2</li>
+</ul>
+</li>
+<li>释放锁的操作在后续锁定同一个锁的操作前，所以 e1 &lt; b2</li>
+</ul>
+<p>线程 1 完成同步块内的操作后，我们观察线程 2 的执行。如果 a2 的结果是 <code>INSTANCE == null</code>，那么：</p>
+<ul>
+<li>线程 2 的执行情况是 a2 &lt; b2 &lt; c2 &lt; e2 &lt; h2</li>
+<li>此时由传递性可以得到：f1 &lt; e1 &lt; b2 &lt; g2，也就是说 h2 可以观察到 f1 写入的 42</li>
+</ul>
+<p>而如果 a2 的结果是 <code>INSTANCE != null</code>，那么：</p>
+<ul>
+<li>线程 2 的执行情况是 a2 &lt; g2</li>
+<li>此时 g2 和 f1 之间不能建立 happens before 关系，因此可能观察到 g2 在 f1 之前发生，也就是线程 2 读到了 0</li>
+</ul>
+<p>那么 volatile 做了什么呢？volatile 引入了写后读的顺序，也就是说加入了 d1 &lt; a2，那么：</p>
+<ul>
+<li>如果 a2 的结果是 <code>INSTANCE == null</code>，那么同上</li>
+<li>如果 a2 的结果是 <code>INSTANCE != null</code>，我们仍然有 f1 &lt; d1 &lt; a2 &lt; g2，因此 g2 能观察到 f1，线程 2 读到了 42</li>
+</ul>
+<h3 id="损坏的-DCL-模式？"><a href="#损坏的-DCL-模式？" class="headerlink" title="损坏的 DCL 模式？"></a>损坏的 DCL 模式？</h3><p><code>volatile</code> 修饰符当前的语义是在 Java 1.5 引入的，准确的说是 JSR 133。在更早的版本，<code>volatile</code>没有 happens before 语义，因此不能用于实现 DCL 模式，这也是 Effective Java 中提到的 DCL is broken 的原因。</p>
+<h2 id="但是也许我们不一定需要-volatile"><a href="#但是也许我们不一定需要-volatile" class="headerlink" title="但是也许我们不一定需要 volatile"></a>但是也许我们不一定需要 volatile</h2><p>如果读者真的去看了 JLS 的 Memory Model 部分，应该会很容易注意到<a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html#jls-17.5" target="_blank" rel="noopener">接下来的一个章节</a>，其中提到了 final 字段的特殊语义：</p>
+<blockquote>
+<p>An object is considered to be <em>completely initialized</em> when its constructor finishes. A thread that can only see a reference to an object after that object has been completely initialized is guaranteed to see the correctly initialized values for that object’s final fields.</p>
+</blockquote>
+<p>线程如果观察到一个完成初始化的对象，Java 可以保证同时能观察到初始化后的 final 字段。</p>
+<p>实际的实现上，JVM 为写入 final 字段的构造方法退出时插入了一个 StoreStore|StoreLoad 内存屏障，保证了写入 final 字段的操作发生在”发布”这个对象之前。<a href="https://github.com/openjdk/jdk/blob/d6f2a174fcf41f0b091ef7eabea5d06fae90e0b2/src/hotspot/share/opto/parse1.cpp#L977-L1044" target="_blank" rel="noopener">相关代码</a>如下：</p>
+<pre class="line-numbers language-cpp"><code class="language-cpp"><span class="token keyword">void</span> Parse<span class="token operator">::</span><span class="token function">do_exits</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// ...</span>
+
+  <span class="token comment" spellcheck="true">// Figure out if we need to emit the trailing barrier. The barrier is only</span>
+  <span class="token comment" spellcheck="true">// needed in the constructors, and only in three cases:</span>
+  <span class="token comment" spellcheck="true">//</span>
+  <span class="token comment" spellcheck="true">// 1. The constructor wrote a final. The effects of all initializations</span>
+  <span class="token comment" spellcheck="true">//    must be committed to memory before any code after the constructor</span>
+  <span class="token comment" spellcheck="true">//    publishes the reference to the newly constructed object. Rather</span>
+  <span class="token comment" spellcheck="true">//    than wait for the publication, we simply block the writes here.</span>
+  <span class="token comment" spellcheck="true">//    Rather than put a barrier on only those writes which are required</span>
+  <span class="token comment" spellcheck="true">//    to complete, we force all writes to complete.</span>
+  <span class="token comment" spellcheck="true">//</span>
+  <span class="token comment" spellcheck="true">// 2. ...</span>
+  <span class="token comment" spellcheck="true">// ...</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">method</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-</span><span class="token operator">></span><span class="token function">is_initializer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span>
+       <span class="token punctuation">(</span><span class="token function">wrote_final</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+         <span class="token punctuation">(</span>AlwaysSafeConstructors <span class="token operator">&amp;&amp;</span> <span class="token function">wrote_fields</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">||</span>
+         <span class="token punctuation">(</span>support_IRIW_for_not_multiple_copy_atomic_cpu <span class="token operator">&amp;&amp;</span> <span class="token function">wrote_volatile</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    _exits<span class="token punctuation">.</span><span class="token function">insert_mem_bar</span><span class="token punctuation">(</span>Op_MemBarRelease<span class="token punctuation">,</span> <span class="token function">alloc_with_final</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment" spellcheck="true">// ...</span>
+  <span class="token punctuation">}</span>
+  <span class="token comment" spellcheck="true">// ...</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也就是说，文章开始的代码，也可以这么写：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Singleton</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> Singleton INSTANCE<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> Singleton <span class="token function">getInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Singleton instance <span class="token operator">=</span> INSTANCE<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>instance <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>Singleton<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>INSTANCE <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                    INSTANCE <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Singleton</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> instance<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">int</span> answer<span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token function">Singleton</span><span class="token punctuation">(</span><span class="token keyword">int</span> answer<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>answer <span class="token operator">=</span> answer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">getAnswer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>answer<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>当然，这里的字段是 <code>int</code>，如果是一个普通的引用类型字段，这里可能还是需要 volatile 保证正确性。</p>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p><a href="https://www.cs.umd.edu/\~pugh/java/memoryModel/jsr-133-faq.html#finalRight" target="_blank" rel="noopener">https://www.cs.umd.edu/\~pugh/java/memoryModel/jsr-133-faq.html#finalRight</a></p>
+</div></div><!--.post-main.post-comment--><div id="gitalk-container"></div><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css"><script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script><script>const gitalk = new Gitalk({
+    clientID: '1b4c00731894d12d4568',
+    clientSecret: '1fa321199cc198f80203716d073c8f2ff2dec849',
+    repo: 'blog',
+    owner: 'IzzelAliz',
+    admin: ['IzzelAliz'],
+    id: location.pathname,
+    distractionFreeMode: false,
+    proxy: 'https://blog-api.izzel.io/?https://github.com/login/oauth/access_token'
+})
+gitalk.render('gitalk-container')</script><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

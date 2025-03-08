@@ -1,0 +1,180 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>[译] 你的函数什么色？ | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2022-09-04</div></div></div><div class="container post-header"><h1>[译] 你的函数什么色？</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#新语言"><span class="toc-number">1.</span> <span class="toc-text">新语言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#你的函数什么色？"><span class="toc-number">2.</span> <span class="toc-text">你的函数什么色？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#炮打函数式编程！"><span class="toc-number">3.</span> <span class="toc-text">炮打函数式编程！</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#颜色仅仅是比喻"><span class="toc-number">4.</span> <span class="toc-text">颜色仅仅是比喻</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#未来是光明的"><span class="toc-number">5.</span> <span class="toc-text">未来是光明的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#但我仍在寻找"><span class="toc-number">6.</span> <span class="toc-text">但我仍在寻找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么语言无色？"><span class="toc-number">7.</span> <span class="toc-text">什么语言无色？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#回忆调用之处"><span class="toc-number">8.</span> <span class="toc-text">回忆调用之处</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#等待生成结果"><span class="toc-number">9.</span> <span class="toc-text">等待生成结果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#特化（Reified）调用栈"><span class="toc-number">10.</span> <span class="toc-text">特化（Reified）调用栈</span></a></li></ol></details></div><div class="container post-content"><p>原文 <a href="https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/" target="_blank" rel="noopener">https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/</a>，Robert Nystrom 版权所有。</p>
+<hr>
+<p>不知道你如何，但是每天早上起来看编程语言论战使人精神一振。看一些人荒废整天探讨一些 <a href="http://www.paulgraham.com/avg.html" target="_blank" rel="noopener">blub</a> 语言总是那么挑动神经。</p>
+<blockquote>
+<p>blub 语言是 PaulGraham 提出的一种假设语言，他假设不同语言之间分出优劣，而 blub 语言是位于中间的语言。<br>会这门语言的程序员看向更低级的语言时，会认为其缺少重要的功能；看向更高级的语言时，却不能意识到为什么其更高级，而是认为其只是多了一些不必要的花哨功能。 —— 译注</p>
+</blockquote>
+<p>（不过，大家都只会用那些趁手的语言，为我们这样的能工巧匠量身定做的精工利器。）</p>
+<p>不过作为那篇文章的作者还是很危险的，因为我整的那个语言可能就是你得意用的。可能下一秒，这篇博客就会挤满明火执仗的暴徒。</p>
+<p>为了自保，也是为了保护你脆弱的自尊心，这里我就生造一个新语言，作为我面对暴徒的替身。</p>
+<p>保持耐心，看到最后，别错过精彩。</p>
+<h2 id="新语言"><a href="#新语言" class="headerlink" title="新语言"></a>新语言</h2><p>为一篇文章学一个新语言有些骇人听闻，所以我们用耳熟能详的举例。就假设这个东西比较像 JS，花括号，分号结尾，有 <code>if</code> 和 <code>while</code> 什么的，就像编程里的通用语。</p>
+<p>选择 JS 并不是因为这篇文章要讲，而是因为大部分读者都能懂这些东西是什么：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">thisIsAFunction</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> <span class="token string">"It's awesome"</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这个语言得“现代”一点，支持函数作为一等公民，你就可以这样：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript"><span class="token comment" spellcheck="true">// 返回一个含有满足集合中所有符合条件元素的列表</span>
+<span class="token keyword">function</span> <span class="token function">filter</span><span class="token punctuation">(</span>collection<span class="token punctuation">,</span> predicate<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> result <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">var</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> collection<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">predicate</span><span class="token punctuation">(</span>collection<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span> result<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>collection<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这就是“高阶”函数，顾名思义，很上流也很好用。你会先在集合上面用它，很快你逐渐理解了一切，就开始到处用它。</p>
+<p>比如测试框架：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript"><span class="token function">describe</span><span class="token punctuation">(</span><span class="token string">"An apple"</span><span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">it</span><span class="token punctuation">(</span><span class="token string">"ain't no orange"</span><span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">expect</span><span class="token punctuation">(</span><span class="token string">"Apple"</span><span class="token punctuation">)</span><span class="token punctuation">.</span>not<span class="token punctuation">.</span><span class="token function">toBe</span><span class="token punctuation">(</span><span class="token string">"Orange"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>或者解析一些数据：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript">tokens<span class="token punctuation">.</span><span class="token function">match</span><span class="token punctuation">(</span>Token<span class="token punctuation">.</span>LEFT_BRACKET<span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// Parse a list literal...</span>
+  tokens<span class="token punctuation">.</span><span class="token function">consume</span><span class="token punctuation">(</span>Token<span class="token punctuation">.</span>RIGHT_BRACKET<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后你就有了许多美妙的可重用轮子和应用，传递函数，调用函数，返回函数。函数盛宴！</p>
+<h2 id="你的函数什么色？"><a href="#你的函数什么色？" class="headerlink" title="你的函数什么色？"></a>你的函数什么色？</h2><p>且慢。我们的新语言有些离奇了，因为它有一个妙妙特性：</p>
+<p><strong>1. 每个函数都有色</strong></p>
+<p>每个函数 —— 匿名的或者有名字的那些 —— 要么是红的或者蓝的。函数的关键字不是一个简单的 <code>function</code>，而是两个：</p>
+<blockquote>
+<p>azure 是天蓝色，carnelian 是橙红色的玛瑙 —— 译注</p>
+</blockquote>
+<pre class="line-numbers language-javascript"><code class="language-javascript">blue_function <span class="token function">doSomethingAzure</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// 这是个蓝色的函数</span>
+<span class="token punctuation">}</span>
+
+red_function <span class="token function">doSomethingCarnelian</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment" spellcheck="true">// 而这是个红的</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这个语言不可以颜色平平，写一个函数就必须得挑个色儿。这是规矩，而且还有别的规矩你得遵守：</p>
+<p><strong>2. 函数的色决定如何调用它</strong></p>
+<p>想象“蓝色调用”和“红色调用”，就比如：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript"><span class="token function">doSomethingAzure</span><span class="token punctuation">(</span><span class="token punctuation">)</span>blue<span class="token punctuation">;</span>
+<span class="token function">doSomethingCarnelian</span><span class="token punctuation">(</span><span class="token punctuation">)</span>red<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>调用函数的时候，你就要按照颜色来调。如果错了 —— 红色的函数括号后面跟了 <code>blue</code>，或者反过来，大事就会不妙：光脚走来走去就会踩上乐高，完整的乐高也会神秘消失一两个。</p>
+<p>挺讨厌的吧？还有一个：</p>
+<p><strong>3. 你只能在红色函数里调用红色函数</strong></p>
+<p>红色函数里面<strong>可以</strong>调用蓝色的，就像这样：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript">red_function <span class="token function">doSomethingCarnelian</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">doSomethingAzure</span><span class="token punctuation">(</span><span class="token punctuation">)</span>blue<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>但是反过来就不行。如果你想这样：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript">blue_function <span class="token function">doSomethingAzure</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">doSomethingCarnelian</span><span class="token punctuation">(</span><span class="token punctuation">)</span>red<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>那你就会被请去西伯利亚一日游。</p>
+<p>这样，写一个 <code>filter()</code> 就比较有挑战性了。得给函数选一个颜色，这个颜色会限制哪些函数可以传进去调用。</p>
+<p>显而易见，让 <code>filter()</code> 是红色的比较好，这样红蓝来者不拒。</p>
+<p>但是下一个规矩，就开始像领子里的头发丝儿一样让你痒痒了：</p>
+<p><strong>4. 红色的函数调用起来更加痛苦</strong></p>
+<p>痛苦究竟是什么先按下不提，可以先暂且想象成每个程序员写了任何函数都必须写上八百字的文档。</p>
+<p>可能红色的函数非常冗长，又或许在某些代码块里不能调用红色的函数，还可能你只能在行数为质数的时候才能调用。这其中的重点是，如果你把一个函数弄成了红色，用了你写的东西的程序员都想给你的咖啡里加醋，或者往披萨上放煮熟的草莓。</p>
+<p>显而易见，这样的话最好就<strong>永远</strong>不要用红色的函数了。我们又重回了理智的世界，所有函数都是蓝色，和它们都没有颜色一样，我们的新语言也不会那么蠢。</p>
+<p>可惜，语言设计者抽风了 —— 而且众所周知所有语言设计者都喜欢调教用户，不是吗？最终的致命一击：</p>
+<p><strong>5. 标准库里有些函数是红的</strong></p>
+<p>这个语言里面有一些函数，我们<strong>必须</strong>去用的，不能自己写一套的，是红色。此时，正常人大概会认为这个语言不想让他用。</p>
+<h2 id="炮打函数式编程！"><a href="#炮打函数式编程！" class="headerlink" title="炮打函数式编程！"></a>炮打函数式编程！</h2><p>问题是不是出在高阶函数上呢？如果现在就停止尽享函数奢华，写一写简单的初等函数，想必头发也会少掉很多吧。</p>
+<p>我们在只调用蓝色函数的时候，就把函数作为蓝色的，否则就是红色的。只要不写一些接受函数的函数，我们就不需要考虑什么函数的“颜色多态”（多态？）之类的东西。</p>
+<p>遗憾的是，高阶函数只是一个例子而已。每当你想要把代码拆开重用时，这个问题总会像大蟒蛇一样缠上你。</p>
+<p>再举个例子，假设我们有一些代码，实现了 Dijkstra 算法用来处理你的社交关系图（这到底有什么用？）。很快，你就得在别的地方用这些代码了，所以一个新的函数诞生了。</p>
+<p>它是什么色？当然是蓝色比较好，但是如果它调用了标准库的红色函数呢？如果新的调用点也是蓝色的？你就得把它改写成红色了。当然还有它的上层调用。无论如何，你总是在想着颜色，颜色仿佛成了鞋里的石子儿。</p>
+<h2 id="颜色仅仅是比喻"><a href="#颜色仅仅是比喻" class="headerlink" title="颜色仅仅是比喻"></a>颜色仅仅是比喻</h2><p>显而易见，这篇文章不是真的在讲颜色。这只是个比方，文字上的小把戏。土匪斗恶霸，可不是真的在讲土匪斗恶霸。</p>
+<p>现在，机灵的读者可能已经有点感觉了，但你或许还蒙在鼓里，那么现在就进行大揭秘：</p>
+<p><strong>红色函数就是异步函数</strong></p>
+<p>如果你在 Node.js 上写代码，每当你写出一个通过调用回调（callback）返回值的函数，你就制造了一个红色函数。回头看看那五条规则，解释一下那些比喻：</p>
+<ol>
+<li><p>同步函数返回值，异步函数调用回调；</p>
+</li>
+<li><p>蓝色函数直接调用获得值，红色函数需要提供一个回调；</p>
+</li>
+<li><p>你不能在同步函数里调用异步函数，因为直到异步函数完成之前你不知道返回的值；</p>
+</li>
+<li><p>异步函数和表达式不搭，因为它们不返回值，错误处理方式也不同，所以不能在 <code>try/catch</code> 和大量其他控制语句中使用；</p>
+</li>
+<li><p>Node 的标准库充满了异步函数（虽然他们意识到了这点开始加入 <code>___Sync()</code> 的同样版本）。</p>
+</li>
+</ol>
+<p>人们提及“回调地狱”时，他们实际上在抱怨某个语言里的红色函数。当人们创建了 <a href="https://www.npmjs.com/search?q=async" target="_blank" rel="noopener">4,089 个库用于异步编程</a>，他们实际上在应付一个语言强加给的问题。</p>
+<blockquote>
+<p>2021/12/03: 至今已有 1,5118 个异步库</p>
+</blockquote>
+<h2 id="未来是光明的"><a href="#未来是光明的" class="headerlink" title="未来是光明的"></a>未来是光明的</h2><p>Node 社区的人们意识到了回调之痛苦，于是他们发明了 <a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise" target="_blank" rel="noopener"><em>Promise</em></a>，或许你已经通过另一个名字学习过了 —— Future。</p>
+<p>Promise 本质上是一个回调和一个错误处理的包装。如果给一个函数传递回调和错误处理器是一个<strong>概念</strong>，那么 Promise 就是这个概念的 <strong>特化</strong>。它是一个表示异步操作的头等对象。</p>
+<p>听了我这段话你可能觉得 Promise 是个好东西了，其实不然。Promise 确实<strong>可以</strong>让你的编写体验提升一点，第四条规则不会<strong>那么</strong>严重。但老实说，其实就是肚子下面一点儿的地方和肚子被来上一拳的区别，可能确实不那么难受，但是应该没人会对此感到满足。</p>
+<p>异常处理和其他控制语句仍然是不可用的状态，你也不能在同步函数里调用一个返回 Future 的函数。就算能，之后维护这段代码的人也会穿越回来对你使用蓄意冲拳。</p>
+<p>Promise 的世界仍然被分为红蓝两色，所以就算你的语言提供了 Promise 或者 Future 这样的特性，它仍然如同我们假设的新语言一样糟糕。</p>
+<p>（这甚至包括本人正在使用的 <a href="https://dart.dev/" target="_blank" rel="noopener">Dart</a>，因此我对于能解决这一点的 <a href="https://github.com/floitschG/fletch" target="_blank" rel="noopener">fletch</a> 相当期待。）</p>
+<blockquote>
+<p>Dart 的 fletch 计划可以提供用户态线程，但已经流产，上方提供的链接是第三方 fork 的远古遗迹 —— 译注</p>
+</blockquote>
+<h2 id="但我仍在寻找"><a href="#但我仍在寻找" class="headerlink" title="但我仍在寻找"></a>但我仍在寻找</h2><p>C# 程序员现在大概跃跃欲试了（他们在微软提供的越来越多语法糖中不断沉陷），因为可以用 <a href="https://msdn.microsoft.com/en-us/library/hh191443.aspx" target="_blank" rel="noopener"><code>await</code> 关键字</a>调用一个异步函数。</p>
+<p>这个东西可以让你调用异步函数和同步函数一样简单，只需要简单地加上一个小小的关键字。表达式里的 <code>await</code> 调用可以嵌套，也可以用在异常处理代码和控制流里。想必和你刚开始学习高阶函数一样，<code>await</code> 也会被到处使用起来。</p>
+<p>Async-await <strong>是</strong>好的，所以 Dart 里也有。<strong>编写</strong>异步代码变得简单多了，但是——如你所想的<strong>但是</strong>——世界仍然是红蓝两半的。尽管更加容易编写，但仍然是异步函数。Async-await 解决了四号规则，红色的函数调用不再那么痛苦，但是到此为止了：</p>
+<ol>
+<li><p>同步函数返回值，异步函数返回 <code>Task&lt;T&gt;</code>（在 Dart 中是 <code>Future&lt;T&gt;</code>）包装起来的值；</p>
+</li>
+<li><p>同步函数直接调用，异步需要一个 <code>await</code>；</p>
+</li>
+<li><p>当你实际上想要 <code>T</code> 的时候，异步方法却返回了包装的值，而且除非把调用的函数也变成异步的，否则你不能拆出实际的 <code>T</code>（不过见下）；</p>
+</li>
+<li><p>除了多出来的 <code>await</code>，至少这个问题被解决了；</p>
+</li>
+<li><p>C# 的核心库比较古老，没有那么多问题。</p>
+</li>
+</ol>
+<p>变好了点儿，至少相对于单纯的回调来说，但是认为一切都完全解决了则是在骗自己。一旦我们开始接触高阶函数，或者尝试着重用代码，颜色的身影就会频频出现。</p>
+<h2 id="什么语言无色？"><a href="#什么语言无色？" class="headerlink" title="什么语言无色？"></a>什么语言无色？</h2><p>所以，JS, Dart, C# 和 Python 都有这个问题。CoffeeScript 和其他编译到 JS 的语言也有（所以 Dart 也有）。甚至 ClojureScript 都会有，尽管他们用 <a href="https://github.com/clojure/core.async" target="_blank" rel="noopener">core.async</a> 尽力避免了。</p>
+<p>想知道没有的吗？<strong>Java</strong>，想不到吧。你有多久没说过“Java 这方面做的不错”了？但是事实如此。可惜 Java 也在试着转移到 Future 和异步 IO 去，仿佛在争倒数第一。</p>
+<p>C# 本可以绕过这个问题，不过他们选择了颜色。在 C# 加入 async-await 和 <code>Task&lt;T&gt;</code> 这样的东西之前，你只需要普通的用一些同步的 API。还有一些语言没有颜色：Go, Lua 与 Ruby。</p>
+<p>有何共同之处呢？</p>
+<p>线程。准确的说，是多个互相独立的调用栈来回切换。它们不需要严格是操作系统线程。Go 的 Goroutine，Lua 的 coroutine 或者 Ruby 的 fiber 都很好。</p>
+<blockquote>
+<p>接上，所以 C# 可以通过使用线程避免 async 的问题。</p>
+</blockquote>
+<h2 id="回忆调用之处"><a href="#回忆调用之处" class="headerlink" title="回忆调用之处"></a>回忆调用之处</h2><p>底层的实际问题可以表述为“该如何在异步操作完成时，回到上一次代码执行的地方”。</p>
+<p>在堆着巨大调用栈时调用了 IO 操作的函数，而为了性能，这个函数用了操作系统底层的异步 API。你不可以等待其完成，因为它是异步的。你必须从这个调用栈返回到语言的事件循环里，让操作系统有点时间完成 IO 操作。</p>
+<p>操作完成后，你需要回到上次调用 IO 操作的地方。一般来说，语言“记住它执行到哪里”的方式是调用栈（callstack），追踪当前正在执行的一系列函数和指令的指针位置。</p>
+<p>但是异步 IO 就必须完整的回退（unwind）并丢弃掉整个调用栈，这似乎就和上面的需求矛盾了：只要我们不在意 IO 的结果，IO 就可以飞快！每个支持异步 IO 的语言 —— JS 则是浏览器的事件循环 —— 都某种程度上受此影响。</p>
+<p>Node 把所谓的调用帧栈用嵌套的回调闭包（closure）实现。你在写下这样的代码时：</p>
+<pre class="line-numbers language-javascript"><code class="language-javascript"><span class="token keyword">function</span> <span class="token function">makeSundae</span><span class="token punctuation">(</span>callback<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token function">scoopIceCream</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token punctuation">(</span>iceCream<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">warmUpCaramel</span><span class="token punctuation">(</span><span class="token keyword">function</span> <span class="token punctuation">(</span>caramel<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token function">callback</span><span class="token punctuation">(</span><span class="token function">pourOnIceCream</span><span class="token punctuation">(</span>iceCream<span class="token punctuation">,</span> caramel<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每个函数“闭合”了所有的上下文，<code>iceCream</code> 和 <code>caramel</code> 这样的参数就从调用栈上进入了堆中。外层的函数返回，调用栈销毁后，这些数据仍然四散在堆里。</p>
+<p>问题是你得<strong>手动</strong>去做这些事情，而这个步骤实际上有一个名字：<a href="https://en.wikipedia.org/wiki/Continuation-passing_style" target="_blank" rel="noopener">continuation-passing<br>style</a>，在七十年代时有人发明其作为编译器内部使用。它可以作为一种更容易被编译器优化的代码表示方式。</p>
+<p>不会有任何人想要像这样写代码，但是 Node 偏偏就是这样，将程序员变成了编译器后端。怎么回事呢？</p>
+<p>Promise 和 Future 同样没有解决这些问题，你仍然在手写很多的函数字面量，区别仅仅是这些函数传入了 <code>.then()</code> 而不是直接写出来。</p>
+<blockquote>
+<p>本文写作时（2015/02）包含 async await 的 ES6 尚未发布（2015/06） —— 译注</p>
+</blockquote>
+<h2 id="等待生成结果"><a href="#等待生成结果" class="headerlink" title="等待生成结果"></a>等待生成结果</h2><p>Async-await 确实有点用。如果你开了编译器的瓢，就能在里面看到 CPS 变换。C# 中使用 <code>await</code> 就是为了告诉编译器：“在这里拆分函数”，在 <code>await</code> 之后的部分由编译器合成一个新的函数。</p>
+<p>因此，.NET 框架的 async-await 不需要运行时的支持：编译器将其编译为一系列运行时可以处理的闭包。（并且，闭包实际上也不需要运行时支持，它们被编译成了匿名类。C# 中的闭包是名副其实的<a href="http://c2.com/cgi/wiki?ClosuresAndObjectsAreEquivalent" target="_blank" rel="noopener">穷人的对象</a>）。</p>
+<p>提到生成器（generator），你会想到什么吗？如果某个语言有 <code>yield</code> 关键字，那说不定它也可以实现类似的事情。</p>
+<p>（实际上，我认为生成器和 async await 是同构的。我的硬盘角落里有一些呆了很久的代码，实现了一个只用了 async-await 的生成器风格游戏循环。）</p>
+<p>回到正题，使用回调、Promise、async-await 和生成器，最终得到的结果就是一堆异步函数，包裹在一堆闭包里，散落在堆中。</p>
+<p>这些函数的最外层由运行时管理，在事件循环或者 IO 操作完成后，调用函数回到之前返回的地方。但是在此之前，你还是得先返回一次，也就是说回退整个栈。</p>
+<p>这就是为什么“红色的函数只能由红色函数调用”，因为你需要一路保存调用栈直到最上层的 <code>main()</code> 或者事件循环里。</p>
+<h2 id="特化（Reified）调用栈"><a href="#特化（Reified）调用栈" class="headerlink" title="特化（Reified）调用栈"></a>特化（Reified）调用栈</h2><p>但是如果可以用线程（操作系统或者绿色线程）的话，这些就不会是问题：挂起整个线程不需要让所有的函数返回。</p>
+<p>我认为 Go 在这方面做的最优雅，遇上 IO 操作时直接挂起 goroutine 并恢复另一个没有被 IO 阻塞的。</p>
+<p>而在标准库中，这些 IO 操作看起来就是同步的，也就是说，它们在完成时直接返回值。但这又与 JS 中的同步不同，因为其他的代码可以同时运行。Go 只是消除了同步和异步代码的区别。</p>
+<p>Go 的并发编程中，你可以自行决定如何编程，而无需受到颜色的束缚。前文提到的五条规则在此完整而彻底地被消除了。</p>
+<p>所以，下次你再因为某个语言有优雅的异步 API 而向我传教时，发现我在咬牙切齿也就了然了。你这是回到了红色和蓝色的世界。</p>
+<script>
+(function() {
+document.querySelectorAll("code").forEach(function (e) {
+e.innerHTML = e.innerHTML.replace(/(red_function|(?<!p)red)/g, "<span style=\"color: #e61300;\">$1</span>")
+.replace(/(blue_function|blue)/g, "<span style=\"color: #1a66ff;\">$1</span>");
+});
+})();
+</script>
+</div></div><!--.post-main.post-comment--><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>
