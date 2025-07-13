@@ -1,0 +1,150 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>开发中的数据存储 | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2019-03-03</div></div></div><div class="container post-header"><h1>开发中的数据存储</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#开发中的数据存储"><span class="toc-number">1.</span> <span class="toc-text">开发中的数据存储</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#配置文件"><span class="toc-number">1.1.</span> <span class="toc-text">配置文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#数据库"><span class="toc-number">1.2.</span> <span class="toc-text">数据库</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#手动写二进制数据"><span class="toc-number">1.3.</span> <span class="toc-text">手动写二进制数据</span></a></li></ol></li></ol></details></div><div class="container post-content"><p>这篇文章是来源于<a href="http://www.mcbbs.net/thread-848236-1-1.html" target="_blank" rel="noopener">这个问题</a>，<br>在回答这个问题之后我思考了一下，怎样存储数据才算优雅又高效，<br>因此有了这篇文章。</p>
+<h2 id="开发中的数据存储"><a href="#开发中的数据存储" class="headerlink" title="开发中的数据存储"></a>开发中的数据存储</h2><p>本文的代码是 Groovy，你可以看做是没有行末分号、异常不用捕获的 Java。<br>本文代码以 MIT License 开源。</p>
+<p>那么开始。</p>
+<h3 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h3><p>配置文件是最易用也最常用的方法之一，<br>但是这不是本文的重点，因为配置文件的使用教程实在是太多了。</p>
+<p>尽管配置文件的本意是给使用者自定义你的插件/Mod的行为，但是用来存储数据也是可以的。</p>
+<p>为方便读者，这里给出一些其他人的教程。</p>
+<ul>
+<li>tdiant 的教程<ul>
+<li><a href="https://github.com/tdiant/BukkitDevelopmentNote/blob/master/brm-1-4.md" target="_blank" rel="noopener">Bukkit 配置 API</a></li>
+<li><a href="https://github.com/tdiant/BukkitDevelopmentNote/blob/master/brm-2-4.md" target="_blank" rel="noopener">Bukkit 配置 API 序列化</a></li>
+</ul>
+</li>
+<li>ustc_zzz 的 <a href="https://fmltutor.ustc-zzzz.net/1.8-%E5%88%9B%E5%BB%BA%E4%B8%80%E4%BB%BD%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6.html" target="_blank" rel="noopener">Forge 配置文件</a> 教程</li>
+<li><a href="https://docs.spongepowered.org/stable/zh-CN/plugin/configuration/index.html" target="_blank" rel="noopener">Sponge 配置文件</a> 教程</li>
+</ul>
+<h3 id="数据库"><a href="#数据库" class="headerlink" title="数据库"></a>数据库</h3><p>数据库是个挺好的话题，给出一个 <a href="http://www.mcbbs.net/thread-783267-1-1.html" target="_blank" rel="noopener">MySQL 教程</a>，</p>
+<p>这篇文章不会讲解数据库，因为数据库也不是本文重点。但是额外提醒一点，用数据库注意阻塞和线程安全。</p>
+<h3 id="手动写二进制数据"><a href="#手动写二进制数据" class="headerlink" title="手动写二进制数据"></a>手动写二进制数据</h3><p>存配置文件看起来很不优雅，还占空间；而存数据库对于一般插件好像又有点多此一举了，那么有没有又快又省空间的方法呢？</p>
+<p>这节的标题就是，这一节也是真正的重点。</p>
+<p>例子，我们要做一个玩家属性插件：</p>
+<pre class="line-numbers language-groovy"><code class="language-groovy"><span class="token keyword">class</span> <span class="token class-name">PlayerData</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> hp <span class="token operator">=</span> <span class="token number">20</span>
+    <span class="token keyword">double</span> strength <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">boolean</span> haveJob
+    Job job
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Job</span> <span class="token punctuation">{</span>
+    String name
+    <span class="token keyword">int</span> level
+    <span class="token keyword">int</span> exp
+    String prefix <span class="token comment" spellcheck="true">// 假设我们的插件甚至还要搞聊天前缀</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>然后把这个实例变成二进制数据。</p>
+<p>模仿 Bukkit 的那个 Serializable，利用 Netty Buffer 库，我们可以搞这么一个二进制数据序列化/反序列化的系统出来：</p>
+<pre class="line-numbers language-groovy"><code class="language-groovy"><span class="token keyword">import</span> com<span class="token operator">.</span>google<span class="token operator">.</span>common<span class="token operator">.</span>collect<span class="token operator">.</span>Maps
+<span class="token keyword">import</span> io<span class="token operator">.</span>netty<span class="token operator">.</span>buffer<span class="token operator">.</span>ByteBuf
+<span class="token keyword">import</span> io<span class="token operator">.</span>netty<span class="token operator">.</span>buffer<span class="token operator">.</span>Unpooled
+<span class="token keyword">import</span> org<span class="token operator">.</span>bukkit<span class="token operator">.</span>plugin<span class="token operator">.</span>java<span class="token operator">.</span>JavaPlugin
+
+<span class="token keyword">import</span> java<span class="token operator">.</span>nio<span class="token operator">.</span>charset<span class="token operator">.</span>StandardCharsets
+<span class="token keyword">import</span> java<span class="token operator">.</span>util<span class="token operator">.</span>function<span class="token operator">.</span>Function
+
+<span class="token keyword">interface</span> <span class="token class-name">Serializable</span> <span class="token punctuation">{</span>
+    <span class="token keyword">void</span> <span class="token function">serialize</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">PlayerData</span> <span class="token keyword">implements</span> <span class="token class-name">Serializable</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> hp <span class="token operator">=</span> <span class="token number">20</span>
+    <span class="token keyword">double</span> strength <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token keyword">boolean</span> haveJob <span class="token operator">=</span> <span class="token boolean">false</span>
+    Job job
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">void</span> <span class="token function">serialize</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        buf<span class="token operator">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>hp<span class="token punctuation">)</span>
+        buf<span class="token operator">.</span><span class="token function">writeDouble</span><span class="token punctuation">(</span>strength<span class="token punctuation">)</span>
+        buf<span class="token operator">.</span><span class="token function">writeBoolean</span><span class="token punctuation">(</span>haveJob<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>haveJob<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            job<span class="token operator">.</span><span class="token function">serialize</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">static</span> PlayerData <span class="token function">deserialize</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        PlayerData data <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">PlayerData</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        data<span class="token operator">.</span>hp <span class="token operator">=</span> buf<span class="token operator">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        data<span class="token operator">.</span>strength <span class="token operator">=</span> buf<span class="token operator">.</span><span class="token function">readDouble</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        data<span class="token operator">.</span>haveJob <span class="token operator">=</span> buf<span class="token operator">.</span><span class="token function">readBoolean</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>data<span class="token operator">.</span>haveJob<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            data<span class="token operator">.</span>job <span class="token operator">=</span> Job<span class="token operator">.</span><span class="token function">deserialize</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> data
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Job</span> <span class="token keyword">implements</span> <span class="token class-name">Serializable</span> <span class="token punctuation">{</span>
+    String name
+    <span class="token keyword">int</span> level
+    <span class="token keyword">int</span> exp
+    String prefix <span class="token comment" spellcheck="true">// 假设我们的插件甚至还要搞聊天前缀</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">void</span> <span class="token function">serialize</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Util<span class="token operator">.</span><span class="token function">writeString</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> name<span class="token punctuation">)</span>
+        buf<span class="token operator">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>level<span class="token punctuation">)</span>
+        buf<span class="token operator">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>exp<span class="token punctuation">)</span>
+        Util<span class="token operator">.</span><span class="token function">writeString</span><span class="token punctuation">(</span>buf<span class="token punctuation">,</span> prefix<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">static</span> Job <span class="token function">deserialize</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Job job <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Job</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        job<span class="token operator">.</span>name <span class="token operator">=</span> Util<span class="token operator">.</span><span class="token function">readString</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span>
+        job<span class="token operator">.</span>level <span class="token operator">=</span> buf<span class="token operator">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        job<span class="token operator">.</span>exp <span class="token operator">=</span> buf<span class="token operator">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        job<span class="token operator">.</span>prefix <span class="token operator">=</span> Util<span class="token operator">.</span><span class="token function">readString</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> job
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Util</span> <span class="token punctuation">{</span>
+    <span class="token keyword">static</span> Map<span class="token operator">&lt;</span>Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> Function<span class="token operator">&lt;</span>ByteBuf<span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">>></span> deserializers <span class="token operator">=</span> Maps<span class="token operator">.</span><span class="token function">newHashMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">static</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token keyword">void</span> <span class="token function">registerDeserializer</span><span class="token punctuation">(</span>Class<span class="token operator">&lt;</span>T<span class="token operator">></span> cl<span class="token punctuation">,</span> Function<span class="token operator">&lt;</span>ByteBuf<span class="token punctuation">,</span> T<span class="token operator">></span> function<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        deserializers<span class="token operator">.</span><span class="token function">put</span><span class="token punctuation">(</span>cl <span class="token punctuation">,</span>function<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">static</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> T <span class="token function">deserialize</span><span class="token punctuation">(</span>Class<span class="token operator">&lt;</span>T<span class="token operator">></span> cl<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Function<span class="token operator">&lt;</span>ByteBuf<span class="token punctuation">,</span> <span class="token operator">?</span><span class="token operator">></span> function <span class="token operator">=</span> deserializers<span class="token operator">.</span><span class="token function">get</span><span class="token punctuation">(</span>cl<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>function <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> <span class="token punctuation">(</span>T<span class="token punctuation">)</span> function<span class="token operator">.</span><span class="token function">apply</span><span class="token punctuation">(</span>Unpooled<span class="token operator">.</span><span class="token function">buffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">Exception</span><span class="token punctuation">(</span><span class="token string">"Not registered class $cl"</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">static</span> <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token function">serialize</span><span class="token punctuation">(</span>Object obj<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>obj <span class="token keyword">instanceof</span> <span class="token class-name">Serializable</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            ByteBuf buf <span class="token operator">=</span> Unpooled<span class="token operator">.</span><span class="token function">buffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            obj<span class="token operator">.</span><span class="token function">serialize</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> buf<span class="token operator">.</span><span class="token function">array</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">return</span> null
+    <span class="token punctuation">}</span>
+    <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">writeString</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">,</span> String value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>value <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            buf<span class="token operator">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span>
+        <span class="token punctuation">}</span>
+        <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> arr <span class="token operator">=</span> value<span class="token operator">.</span><span class="token function">getBytes</span><span class="token punctuation">(</span>StandardCharsets<span class="token operator">.</span>UTF_8<span class="token punctuation">)</span>
+        buf<span class="token operator">.</span><span class="token function">writeInt</span><span class="token punctuation">(</span>arr<span class="token operator">.</span>length<span class="token punctuation">)</span>
+        buf<span class="token operator">.</span><span class="token function">writeBytes</span><span class="token punctuation">(</span>arr<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">static</span> String <span class="token function">readString</span><span class="token punctuation">(</span>ByteBuf buf<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">int</span> len <span class="token operator">=</span> buf<span class="token operator">.</span><span class="token function">readInt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>len <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">return</span> null
+        <span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> arr <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">byte</span><span class="token punctuation">[</span>len<span class="token punctuation">]</span>
+        buf<span class="token operator">.</span><span class="token function">readBytes</span><span class="token punctuation">(</span>arr<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">String</span><span class="token punctuation">(</span>arr<span class="token punctuation">,</span> StandardCharsets<span class="token operator">.</span>UTF_8<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Plugin</span> <span class="token keyword">extends</span> <span class="token class-name">JavaPlugin</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">void</span> <span class="token function">onEnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        Util<span class="token operator">.</span><span class="token function">registerDeserializer</span><span class="token punctuation">(</span>PlayerData<span class="token punctuation">,</span> PlayerData<span class="token punctuation">:</span><span class="token punctuation">:</span>deserialize<span class="token punctuation">)</span>
+        Util<span class="token operator">.</span><span class="token function">registerDeserializer</span><span class="token punctuation">(</span>Job<span class="token punctuation">,</span> Job<span class="token punctuation">:</span><span class="token punctuation">:</span>deserialize<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</div></div><!--.post-main.post-comment--><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>字符串与正则表达式 | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2018-12-01</div></div></div><div class="container post-header"><h1>字符串与正则表达式</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Ⅰ-普通的字符串概念"><span class="toc-number">1.</span> <span class="toc-text">Ⅰ 普通的字符串概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#一些关于字符串的术语"><span class="toc-number">1.1.</span> <span class="toc-text">一些关于字符串的术语</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#一些关于语言的术语"><span class="toc-number">1.2.</span> <span class="toc-text">一些关于语言的术语</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#字符串操作的优先级"><span class="toc-number">1.3.</span> <span class="toc-text">字符串操作的优先级</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Ⅱ-普通正则表达式"><span class="toc-number">2.</span> <span class="toc-text">Ⅱ 普通正则表达式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#匹配浮点数（floating-point-number）"><span class="toc-number">2.1.</span> <span class="toc-text">匹配浮点数（floating point number）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#正则定义"><span class="toc-number">2.2.</span> <span class="toc-text">正则定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#拓展正则表达式语法"><span class="toc-number">2.3.</span> <span class="toc-text">拓展正则表达式语法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#转义与元字符"><span class="toc-number">2.4.</span> <span class="toc-text">转义与元字符</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#其他的语法"><span class="toc-number">2.5.</span> <span class="toc-text">其他的语法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Ⅲ-高级的正则表达式"><span class="toc-number">3.</span> <span class="toc-text">Ⅲ 高级的正则表达式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#组"><span class="toc-number">3.1.</span> <span class="toc-text">组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#后向引用-Backreference"><span class="toc-number">3.2.</span> <span class="toc-text">后向引用 Backreference</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#零宽度匹配-zero-width"><span class="toc-number">3.3.</span> <span class="toc-text">零宽度匹配 zero-width</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#贪婪、懒惰与占有"><span class="toc-number">3.4.</span> <span class="toc-text">贪婪、懒惰与占有</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#独立的非非捕获性的组"><span class="toc-number">3.5.</span> <span class="toc-text">独立的非非捕获性的组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#非转义匹配"><span class="toc-number">3.6.</span> <span class="toc-text">非转义匹配</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Ⅳ-两个正则使用实例"><span class="toc-number">4.</span> <span class="toc-text">Ⅳ 两个正则使用实例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Notepad-Sublime-Text-中搜索替换"><span class="toc-number">4.1.</span> <span class="toc-text">Notepad++ / Sublime Text 中搜索替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-中全文搜索"><span class="toc-number">4.2.</span> <span class="toc-text">Java 中全文搜索</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#答案"><span class="toc-number">5.</span> <span class="toc-text">答案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1"><span class="toc-number">5.1.</span> <span class="toc-text">1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2"><span class="toc-number">5.2.</span> <span class="toc-text">2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3"><span class="toc-number">5.3.</span> <span class="toc-text">3</span></a></li></ol></li></ol></details></div><div class="container post-content"><p>由于时常能看到一些关于 ItemStack 里面提取 lore 的属性信息的，并且正好最近写了个属性插件，那就来讲一讲正则吧。</p>
+<h1 id="Ⅰ-普通的字符串概念"><a href="#Ⅰ-普通的字符串概念" class="headerlink" title="Ⅰ 普通的字符串概念"></a>Ⅰ 普通的字符串概念</h1><h2 id="一些关于字符串的术语"><a href="#一些关于字符串的术语" class="headerlink" title="一些关于字符串的术语"></a>一些关于字符串的术语</h2><p>以下术语会用于这篇教程中：</p>
+<ul>
+<li><p><code>Σ</code>：字母表集合，在这篇教程中为能打在这个帖子中的任何字符，除了 <code>ε</code> ，因为要用它表示空串</p>
+</li>
+<li><p><code>字符串</code>：来自 <code>Σ</code> 的0或N个字符的有限序列，也称串</p>
+<blockquote>
+<p>在这篇教程中，字符串会用 <code>这种格式</code> 包围</p>
+</blockquote>
+</li>
+<li><p><code>空串</code>：含有0个字符的字符串，也会用 <code>ε</code> 表示</p>
+</li>
+<li><p><code>子串</code>：字符串掐头去尾（0或N个字符）得到的新字符串</p>
+<blockquote>
+<p><code>abcbabc</code> 的子串有 <code>abcbabc</code> <code>abcb</code> <code>babc</code> <code>ba</code> ε<br>也就是说在 Java 里，某串A的子串B 可以让 <code>A.contains(B) = true</code></p>
+</blockquote>
+</li>
+<li><p><code>子序列</code>：字符串随机取出字符（0或N个）得到的新字符串</p>
+<blockquote>
+<p><code>abcbabc</code> 的子序列有 <code>abcbabc</code> <code>abab</code> <code>ca</code> ε</p>
+</blockquote>
+</li>
+<li><p><code>真子串</code>：除了自身以外的子串</p>
+</li>
+<li><p><code>真子序列</code>：除了自身以外的子序列</p>
+</li>
+</ul>
+<h2 id="一些关于语言的术语"><a href="#一些关于语言的术语" class="headerlink" title="一些关于语言的术语"></a>一些关于语言的术语</h2><p>同上，而且这些术语会用的很多：</p>
+<ul>
+<li><p><code>字符串的连接</code>：两个串的连接为第一个串后紧跟着第二个串的串</p>
+<blockquote>
+<p>假设 A 是字符串 <code>hailuo</code> ，B 是字符串 <code>is</code> ，C 是字符串 <code>handsome</code>，那么 A B C 的连接表示为 <code>ABC</code>，也就是 <code>hailuo is handsome</code></p>
+</blockquote>
+</li>
+<li><p><code>字符串的或</code>：两个串的或为 为第一个串或第二个串的串</p>
+<blockquote>
+<p>假设同上，A C 的或表示为 <code>A|C</code>，也就是 <code>hailuo</code> 字符串 或者 <code>handsome</code> 字符串</p>
+</blockquote>
+</li>
+<li><p><code>字符串的Kleene闭包</code>：为0或N个某个串的连接</p>
+<blockquote>
+<p>假设 A 为字符串 <code>ab</code>，<code>A*</code> <del>为一个启发式寻路算法</del> 为 ε <code>ab</code> <code>abab</code> <code>ababababab</code> ….</p>
+</blockquote>
+</li>
+<li><p><code>(字符串)</code>：和 <code>字符串</code> 是一样的</p>
+</li>
+</ul>
+<h2 id="字符串操作的优先级"><a href="#字符串操作的优先级" class="headerlink" title="字符串操作的优先级"></a>字符串操作的优先级</h2><p>在描述一个字符串时，你可能已经遇到了这类似的问题：</p>
+<ul>
+<li><code>aac|dbb</code> 是指 {<code>aac</code>,<code>dbb</code>} 还是 {<code>aacbb</code>, <code>aadbb</code>} 呢</li>
+<li><code>abcd*</code> 是指 {ε, <code>abcd</code>, <code>abcdabcd</code>, ….} 还是 {<code>abc</code>, <code>abcd</code>, <code>abcdddd</code>, …} 呢</li>
+</ul>
+<p>为了解决这些问题，我们可以加括号：</p>
+<ul>
+<li><code>(aac)|(dbb)</code> 指 {<code>aac</code>,<code>dbb</code>}，而 <code>aa(c|d)bb</code> 指 {<code>aacbb</code>, <code>aadbb</code>}</li>
+<li><code>(abcd)*</code> 指 {ε, <code>abcd</code>, <code>abcdabcd</code>, ….}，而 <code>abc((d)*)</code> 指 {<code>abc</code>, <code>abcd</code>, <code>abcdddd</code>, …}</li>
+</ul>
+<p>但是，大量使用括号显然不美观，所以定义以下操作的优先级：</p>
+<p><code>(a) &gt; a* &gt; ab &gt; a|b</code></p>
+<p>也就是说，最上面的两个问题的答案分别为 {<code>aac</code>,<code>dbb</code>} 和 {<code>abc</code>, <code>abcd</code>, <code>abcdddd</code>, …}</p>
+<p>理解以上内容后，你就有足够的基础理解正则表达式了。<br>为了防止你的理解不够深刻，你可以思考一下以下几个问题：</p>
+<ol>
+<li>列出 <code>abcd</code> 的子串、真子串、子序列、真子序列</li>
+<li><code>(a|b)*</code> 描述的是什么串</li>
+<li><code>a((a|(b*))((b)b|(cc)*)|dd)</code> 可以去掉哪些括号并不影响其表达的字符串</li>
+</ol>
+<p>答案见文末</p>
+<hr>
+<h1 id="Ⅱ-普通正则表达式"><a href="#Ⅱ-普通正则表达式" class="headerlink" title="Ⅱ 普通正则表达式"></a>Ⅱ 普通正则表达式</h1><p>正则表达式，可用于匹配给出的字符串是否满足要求，也可以用于从字符串中提取需要的信息。</p>
+<p>初代的正则表达式只有4种语法：</p>
+<ul>
+<li>连接 <code>ab</code></li>
+<li>或 <code>a|b</code></li>
+<li>0个或多个 <code>a*</code></li>
+<li><code>(a)</code> 等于 <code>a</code></li>
+</ul>
+<p>和上一章介绍的优先级是相同的。</p>
+<p>本章从一个例子开始：</p>
+<h2 id="匹配浮点数（floating-point-number）"><a href="#匹配浮点数（floating-point-number）" class="headerlink" title="匹配浮点数（floating point number）"></a>匹配浮点数（floating point number）</h2><p>先来看看定义，我们可以这么表示一个小数：</p>
+<blockquote>
+<p>   $123.456×2^{789}$<br>   $整数.零数×2^{指数}$</p>
+</blockquote>
+<p>Java 的浮点数可以表示为以下格式：</p>
+<blockquote>
+<p>0000.00000E0000</p>
+</blockquote>
+<p>包含一个整数，一个可选的 . 以及一个零数，一个可选的 E 以及指数</p>
+<p>我们将会尝试用正则表达式匹配这个浮点数字符串。</p>
+<p>由于正则表达式一眼望上去不是很直观（做了上一章的第三道题的应该能理解为何），我们先用一种其他的方式表达正则表达式：</p>
+<h2 id="正则定义"><a href="#正则定义" class="headerlink" title="正则定义"></a>正则定义</h2><p>用以下的方式表达一个正则表达式：</p>
+<pre><code>n1 -&gt; r1
+n2 -&gt; r2
+n3 -&gt; r3
+....</code></pre><p>其中 ni 表示一个名字，为了和正则区分开来名字使用斜体。每个 ri 都指一个正则表达式，并可以引用 j &lt; i 的 nj 来代替之前定义的正则。</p>
+<p>如前所述，浮点数包含整数：</p>
+<pre><code>digit -&gt; 0|1|2|3|4|5|6|7|8|9
+sign -&gt; + | - | ε
+number -&gt; digit digit *</code></pre><p>以及一个可选的零数：</p>
+<pre><code>optional_fraction -&gt; .number | ε</code></pre><p>以及一个可选的指数：</p>
+<pre><code>optional_exponent -&gt; ( e | E ) sign number | ε</code></pre><p>浮点数就可以表示为：</p>
+<pre><code>floatingPointNumber -&gt; sign number optional_fraction optional_exponent</code></pre><p>而将名称替换回正则表达式后，最终结果为：</p>
+<pre><code>(+|-|)((0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)(.((0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)|)((e|E)(+|-|)((0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)|)</code></pre><p>这个正则表达式只使用了上面的四种语法，这也是你正式写出的第一个正则表达式（如果你之前没写过的话），尽管它又长又丑，但是它可以匹配各种能在 Java 中编译通过?的浮点数。</p>
+<h2 id="拓展正则表达式语法"><a href="#拓展正则表达式语法" class="headerlink" title="拓展正则表达式语法"></a>拓展正则表达式语法</h2><p>考虑</p>
+<pre><code>digit -&gt; 0|1|2|3|4|5|6|7|8|9</code></pre><p>太麻烦了，我们添加一种语法：<code>[abc]</code> 表示 <code>a|b|c</code> 即提供的字符中的任意一个，并且还提供了语法 <code>[a-b]</code> 表示从 a 到 b 的连续的字符，如 <code>[a-z]</code> 表示所有小写字母，<code>[a-zA-Z]</code> 表示所有字母。</p>
+<p>因此上面的定义可以更换为</p>
+<pre><code>digit -&gt; [0-9]</code></pre><p>考虑</p>
+<pre><code>number -&gt; digit digit *</code></pre><p>太麻烦了，我们添加一种语法：<code>a+</code> 表示 1或N个a，因此上面的定义可以更换为</p>
+<pre><code>number -&gt; digit +</code></pre><p>考虑</p>
+<pre><code>sign -&gt; + | - | ε
+optional_fraction -&gt; .number | ε
+optional_exponent -&gt; ( e | E ) sign number | ε</code></pre><p>它们都使用了 <code>xxxx | ε</code> 表达可选的字符串，太麻烦了，我们添加一种语法 <code>a?</code> 表达0或1个a，因此上面的定义可以更换为：</p>
+<pre><code>sign -&gt; [+-]?
+optional_fraction -&gt; ( .number )?
+optional_exponent -&gt; ( [eE] sign number )?</code></pre><p>因此，浮点数的正则表达式可以化简为：</p>
+<pre><code>[+-]?[0-9]+(.[0-9]+)?([Ee][+-]?[0-9]+)?</code></pre><p>这是你写的第二个正则表达式，它短了许多，功能与上面第一个一模一样。但是，这还不是最短的。</p>
+<h2 id="转义与元字符"><a href="#转义与元字符" class="headerlink" title="转义与元字符"></a>转义与元字符</h2><p>你可能注意到了上面出现了3次 <code>[0-9]</code> ，并且你以后可能还会用无数次 <code>[0-9]</code> 来匹配数字，为了防止这种情况发生，元字符出现了。</p>
+<p>元字符比较多，但是有几个最好记住（标红），鉴于网上一搜就能知道元字符有哪些，但是这里还是会提供一份。</p>
+<p>同时，既然有了元字符以及上面新加的新语法，类似 . + - \ ^ $ 的符号都有了特殊的意义，在作为字符使用时应在前面加上 <code>\</code></p>
+<table>
+<thead>
+<tr>
+<th>代码</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.</td>
+<td>匹配除换行符以外的任意字符</td>
+</tr>
+<tr>
+<td>\w</td>
+<td>匹配字母或数字或下划线或汉字</td>
+</tr>
+<tr>
+<td>\s</td>
+<td>匹配任意的空白符</td>
+</tr>
+<tr>
+<td>\d</td>
+<td>匹配数字</td>
+</tr>
+<tr>
+<td>\b</td>
+<td>匹配单词的开始或结束</td>
+</tr>
+<tr>
+<td>^</td>
+<td>匹配字符串的开始</td>
+</tr>
+<tr>
+<td>$</td>
+<td>匹配字符串的结束</td>
+</tr>
+<tr>
+<td>\w</td>
+<td>匹配任意不是字母，数字，下划线，汉字的字符</td>
+</tr>
+<tr>
+<td>\S</td>
+<td>匹配任意不是空白符的字符</td>
+</tr>
+<tr>
+<td>\D</td>
+<td>匹配任意非数字的字符</td>
+</tr>
+<tr>
+<td>\B</td>
+<td>匹配不是单词开头或结束的位置</td>
+</tr>
+<tr>
+<td>\a</td>
+<td>报警字符(打印它的效果是电脑嘀一声)</td>
+</tr>
+<tr>
+<td>\b</td>
+<td>通常是单词分界位置，但如果在字符类里使用代表退格</td>
+</tr>
+<tr>
+<td>\t</td>
+<td>制表符，Tab</td>
+</tr>
+<tr>
+<td>\r</td>
+<td>回车</td>
+</tr>
+<tr>
+<td>\v</td>
+<td>竖向制表符</td>
+</tr>
+<tr>
+<td>\f</td>
+<td>换页符</td>
+</tr>
+<tr>
+<td>\n</td>
+<td>换行符</td>
+</tr>
+<tr>
+<td>\e</td>
+<td>Escape</td>
+</tr>
+<tr>
+<td>\0nn</td>
+<td>ASCII代码中八进制代码为nn的字符</td>
+</tr>
+<tr>
+<td>\xnn</td>
+<td>ASCII代码中十六进制代码为nn的字符</td>
+</tr>
+<tr>
+<td>\unnnn</td>
+<td>Unicode代码中十六进制代码为nnnn的字符</td>
+</tr>
+<tr>
+<td>\cN</td>
+<td>ASCII控制字符。比如\cC代表Ctrl+C</td>
+</tr>
+<tr>
+<td>\A</td>
+<td>字符串开头(类似^，但不受处理多行选项的影响)</td>
+</tr>
+<tr>
+<td>\Z</td>
+<td>字符串结尾或行尾(不受处理多行选项的影响)</td>
+</tr>
+<tr>
+<td>\z</td>
+<td>字符串结尾(类似$，但不受处理多行选项的影响)</td>
+</tr>
+<tr>
+<td>\G</td>
+<td>当前搜索的开头</td>
+</tr>
+<tr>
+<td>\p{name}</td>
+<td>Unicode中命名为name的字符类，例如\p{IsGreek}</td>
+</tr>
+</tbody></table>
+<p>也就是说，浮点数的正则可以写作：（注意小数点及正负号的转义）</p>
+<pre><code>[\+\-]?\d+(\.\d+)?([Ee][\+\-]?\d+)?</code></pre><h2 id="其他的语法"><a href="#其他的语法" class="headerlink" title="其他的语法"></a>其他的语法</h2><ul>
+<li>重复：</li>
+</ul>
+<blockquote>
+<p>   <code>a{m,n}</code> 表示重复m到n遍的a<br>    <code>a{n}</code> 表示重复n遍的a</p>
+</blockquote>
+<ul>
+<li>字符类：<br>对于类似 <code>[abc]</code> 的语法（叫字符类），还有更多用途：</li>
+</ul>
+<blockquote>
+<p>   <code>[^a-f]</code> 匹配除了 <code>abcdef</code> 的任意字符<br>    <code>[a-d[m-p]]</code> 取 <code>a-z</code>和<code>m-p</code>的并集，即 <code>[a-dm-p]</code><br>    <code>[a-z&amp;&amp;[def]]</code> 取 <code>a-z</code>和<code>def</code>的交集，即 <code>[def]</code><br>    <code>[a-z&amp;&amp;[^bc]]</code> 除了 <code>bc</code> 以外的 <code>a-z</code>，即 <code>[ad-z]</code> （补集）<br>    <code>[a-z&amp;&amp;[^m-p]]</code> 除了 <code>m-p</code> 以外的 <code>a-z</code>，即<code>[a-lq-z]</code> （补集）</p>
+</blockquote>
+<p>到此，你已经掌握了正则表达式中的大部分的内容了，如果不需要更高级的用途，你可以在此停止了。</p>
+<p>当然，在此提供一些题目供思考练习</p>
+<ol start="0">
+<li>设计匹配 Minecraft 中物品 lore 的正则表达式</li>
+<li>本章例中，浮点数匹配仍有一些问题，比如无法辨别 0001.2 这类非法浮点数，并且对 abc123.5e6def 仍能匹配成功，请尝试完善这个正则表达式，并尝试化简。</li>
+<li>设计匹配 ipv4 ip地址的正则定义，再转化为正则表达式</li>
+</ol>
+<p>答案见文末</p>
+<hr>
+<h1 id="Ⅲ-高级的正则表达式"><a href="#Ⅲ-高级的正则表达式" class="headerlink" title="Ⅲ 高级的正则表达式"></a>Ⅲ 高级的正则表达式</h1><h2 id="组"><a href="#组" class="headerlink" title="组"></a>组</h2><p>在之前，我们介绍了括号操作符，用于改变优先级。括号不止这点用处。</p>
+<p>括号可用于分组，我们再次拿出这个匹配浮点数的正则表达式作为例子：</p>
+<pre><code>[\+\-]?\d+(\.\d+)?([Ee][\+\-]?\d+)?</code></pre><p>在此例中，共有2个括号对，我们称之为两个组：<code>(\.\d+)</code> 和 <code>([Ee][\+\-]?\d+)</code>，分别为组 1 组 2；同时，整个正则表达式作为默认的组 0。</p>
+<p>当然，按照组数一个一个数实在是太麻烦了，好在我们可以给组命名：</p>
+<p><code>(?&lt;name&gt;regex)</code> 为一个名为 name 的组。<br><code>(?:regex)</code> 为一个无名且不进行计数的组。</p>
+<p>组有何用呢？接下来你就能看到了。</p>
+<h2 id="后向引用-Backreference"><a href="#后向引用-Backreference" class="headerlink" title="后向引用 Backreference"></a>后向引用 Backreference</h2><p>后向引用可用于匹配之前出现过的文本，使用组作为标记。</p>
+<p>其中，我们可以使用 <code>\1 \2 \n</code> 代表数字组匹配的字符串，也可以使用 <code>\k&lt;name&gt;</code> 匹配之前 name 组匹配的字符串。</p>
+<p>举个例子，假如我们只想匹配整数和零数相同的小数，我们可以写：</p>
+<pre><code>(\d+)\.\1</code></pre><p>其中后面的 \1 为前一个组 <code>(\d+)</code> 匹配的数字，所以这个正则表达式可以匹配 123.123，却不匹配 123.124。</p>
+<p>当然，既然可以给组命名，那么也就可以这么写：</p>
+<pre><code>(?&lt;number&gt;\d+)\.\k&lt;number&gt;</code></pre><p>这个正则表达式作用和上面相同。</p>
+<h2 id="零宽度匹配-zero-width"><a href="#零宽度匹配-zero-width" class="headerlink" title="零宽度匹配 zero-width"></a>零宽度匹配 zero-width</h2><p>零宽度匹配，也有人叫它零宽断言。</p>
+<p>零宽度是指，这个匹配组并不会消耗字符：<br>假如说你想匹配1.某个前方或后方满足特殊要求的字符串，但是2.前方或者后方的字符可能还需要用于其他的匹配，<br>普通的匹配会吃掉这些字符用于1.满足要求的字符，而导致用于2.还需要匹配的部分匹配失败。<br>也就是说，零宽匹配中的正则表达式仅用于要求测试，不影响其他匹配。读不懂这段话没关系，可以结合后例。</p>
+<blockquote>
+<p>   零宽肯定先行断言：<code>reg1(?=reg2)</code> 断言 reg1 匹配的字符串后方出现匹配 reg2 的字符串<br>    零宽否定先行断言：<code>reg1(?!reg2)</code> 断言 reg1 匹配的字符串后方不出现匹配 reg2 的字符串<br>    零宽肯定后行断言：<code>(?&lt;=reg2)reg1</code> 断言 reg1 匹配的字符串前方出现匹配 reg2 的字符串<br>    零宽否定后行断言：<code>(?&lt;!reg2)reg1</code> 断言reg1 匹配的字符串前方不出现匹配 reg2 的字符串</p>
+</blockquote>
+<p>这里的先行后行是指，在匹配的回溯过程中，当找到 reg1 的内容后，如果向文本前方（正向）查找断言，则为先行（lookahead）；<br>若找到 reg1 后，需要向文本后方（倒着）查找断言，则为后行（lookbehind）。方便记忆的方法就是，先行 reg1 放前，后行 reg1 放后。</p>
+<p>接着举几个例子：</p>
+<blockquote>
+<p><code>aaa(?=bbb)bbb</code>，可以匹配 <code>aaabbb</code>，此例说明何为零宽：不占用后续匹配的字符串<br><code>abc(?=def)</code>，不能匹配任何东西，因为整个正则表达式需要满足仅含有 abc 三个字符（断言是不会消耗字符的），但是断言又要求 abc 后跟随着 def<br><code>abc(?=def).*def(?=ghi).*</code>，匹配文段中跟随者def的abc，并且在不远的后面出现了跟随着ghi的def，所以这个例子可以匹配 <code>abcdefxxxxxxdefghi</code>，也可以匹配 <code>abcdefghi</code> 。<br><code>abc(?=def).*def(?=ghi)</code>，无法匹配 <code>abcdefghi</code> ，原因参见第二个例子。</p>
+</blockquote>
+<h2 id="贪婪、懒惰与占有"><a href="#贪婪、懒惰与占有" class="headerlink" title="贪婪、懒惰与占有"></a>贪婪、懒惰与占有</h2><p>在之前我们讲到重复时，如果你自己做过测试，那么你会发现，<code>a.*b</code> 会匹配 <code>ababab</code> 中的 <code>ababab</code> 而不是 <code>ab</code>；<br>也就是说，默认的重复语 <code>*</code> 尝试匹配最长的那个字符串。假如我们想匹配更短一些的呢？</p>
+<blockquote>
+<p>贪婪量词：<code>regex</code>，表示能匹配 regex 的最长字符串，比如 <code>a*</code> 匹配 <code>aaaaa</code> 会匹配 <code>aaaaa</code><br>懒惰量词：<code>regex?</code>，表示能匹配 regex 的最短字符串，比如 <code>a*?</code> 匹配 <code>aaaaa</code> 会匹配 <code>ε</code><br>占有量词：<code>regex+</code>，表示能不回溯地匹配 regex 的最长字符串，比如 <code>a*+</code> 匹配 <code>aaaaa</code> 会匹配 <code>aaaaa</code></p>
+</blockquote>
+<p>这样简略的介绍可能没人能理解什么是占有量词，并且对其他两种没有一个直观的认识，那么来看例子：</p>
+<p>字符串模板为 <code>abbbabbcbbabbc</code></p>
+<blockquote>
+<p>贪婪的正则表达式为 <code>[abc]*c</code> ，会匹配 <code>abbbabbcbbabbc</code> （尽可能匹配长）<br>懒惰的正则表达式为 <code>[abc]*?c</code> ，会匹配 <code>abbbabbc</code> 和 <code>bbabbc</code> （尽可能匹配短）<br>占有的正则表达式为 <code>[abc]*+c</code> ，什么也不会匹配。</p>
+</blockquote>
+<p>为什么呢？</p>
+<p>占有模式下，<code>[abc]*+</code> 这一部分，可以完全匹配整个字符串，而占有模式下不进行回溯，也就是说 <code>[abc]*+</code> 会用掉所有字符，而使最后一个 c 没有任何字符匹配，因此匹配失败。</p>
+<p>而贪婪模式下，尽管 <code>[abc]*</code> 可以匹配整个字符串（abbbabbcbbabbc），但是因为还有一个 c 没有匹配，因此回溯向前查找，最终<code>[abc]*</code> 匹配的是 abbbabbcbbabb 。</p>
+<h2 id="独立的非非捕获性的组"><a href="#独立的非非捕获性的组" class="headerlink" title="独立的非非捕获性的组"></a>独立的非非捕获性的组</h2><p><code>(?&gt;regex)</code>，表示一旦这个组匹配成功后，不再对这个组进行回溯。</p>
+<p>例子：</p>
+<blockquote>
+<p><code>a(bc|b)c</code> 可以匹配 abcc 和 abc，因为在处理第一个或操作<code>bc|b</code>，正则引擎记住了要在这里回溯，因此会对bcc和bc都进行匹配。<br><code>a(?&gt;bc|b)c</code> 可以匹配 abcc，但不会匹配 abc，因为第一遍匹配 abc 时，<code>a(?&gt;bc|b)</code> 这一部分已经匹配了 abc，因此不在这里回溯，而最后的一个 c 当然就匹配失败了。</p>
+</blockquote>
+<h2 id="非转义匹配"><a href="#非转义匹配" class="headerlink" title="非转义匹配"></a>非转义匹配</h2><p><code>\Q</code> 表示非转义字符串的开始，<code>\E</code> 表示非转义字符串的结束。<br>比如 <code>\Q[\+\-]?\d+(\.\d+)?([Ee][\+\-]?\d+)?\E</code> 会匹配 <code>[\+\-]?\d+(\.\d+)?([Ee][\+\-]?\d+)?</code> 这个字符串。</p>
+<p>本章有一定难度，请对提供的所有例子都进行思考，了解”为什么会这样匹配”。</p>
+<p>本章到此结束。</p>
+<p>按照惯例，提供一些题目进行思考练习。</p>
+<ol>
+<li><code>\b(?&lt;first&gt;\w+)\b\s+(\b\k&lt;first&gt;\b\s*)+</code> 是干什么用的</li>
+<li><code>^((?!RegularExpression).)*$</code> 是干什么用的</li>
+</ol>
+<p>答案见文末</p>
+<h1 id="Ⅳ-两个正则使用实例"><a href="#Ⅳ-两个正则使用实例" class="headerlink" title="Ⅳ 两个正则使用实例"></a>Ⅳ 两个正则使用实例</h1><h2 id="Notepad-Sublime-Text-中搜索替换"><a href="#Notepad-Sublime-Text-中搜索替换" class="headerlink" title="Notepad++ / Sublime Text 中搜索替换"></a>Notepad++ / Sublime Text 中搜索替换</h2><p>比如把 markdown 的图片链接转换为 discuz 的</p>
+<p><img src="search.png" alt></p>
+<p>点击 replace 后变成了</p>
+<p><img src="replace.png" alt></p>
+<p>如图，可以使用组</p>
+<h2 id="Java-中全文搜索"><a href="#Java-中全文搜索" class="headerlink" title="Java 中全文搜索"></a>Java 中全文搜索</h2><pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> io<span class="token punctuation">.</span>izzel<span class="token punctuation">.</span>strtutor<span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>regex<span class="token punctuation">.</span>Matcher<span class="token punctuation">;</span>
+<span class="token keyword">import</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>regex<span class="token punctuation">.</span>Pattern<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Main</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment" spellcheck="true">// 正则表达式</span>
+        Pattern pattern <span class="token operator">=</span> Pattern<span class="token punctuation">.</span><span class="token function">compile</span><span class="token punctuation">(</span><span class="token string">"\\b(?&lt;first>\\w+)\\b\\s+(\\b\\k&lt;first>\\b\\s*)+"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment" spellcheck="true">// 输入的内容</span>
+        Matcher input <span class="token operator">=</span> pattern<span class="token punctuation">.</span><span class="token function">matcher</span><span class="token punctuation">(</span><span class="token string">"A b c c b a b f f d."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span>input<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment" spellcheck="true">// 默认第 0 组，还记得前面讲的怎么分组吗</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>input<span class="token punctuation">.</span><span class="token function">group</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 叫 first 的组</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>input<span class="token punctuation">.</span><span class="token function">group</span><span class="token punctuation">(</span><span class="token string">"first"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">// 第二个组</span>
+            System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>input<span class="token punctuation">.</span><span class="token function">group</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>更多 Java 相关的 API 比如 <code>String#replaceAll</code> <code>String#split</code> <code>String#matches</code> 以及 <code>Pattern</code> <code>Matcher</code> 的高级用法请结合搜索引擎了解。</p>
+<hr>
+<h1 id="答案"><a href="#答案" class="headerlink" title="答案"></a>答案</h1><h2 id="1"><a href="#1" class="headerlink" title="1"></a>1</h2><ol>
+<li><blockquote>
+<p>子串 {ε, a, b, c, d, ab, bc, cd, abc, bcd, abcd}<br>真子串 {ε, a, b, c, d, ab, bc, cd, abc, bcd}<br>子序列 {ε, a, b, c, d, ab, ac, ad, bc, bd, cd, abc, abd, acd, bcd, abcd}<br>真子序列 {ε, a, b, c, d, ab, ac, ad, bc, bd, cd, abc, abd, acd, bcd}</p>
+</blockquote>
+</li>
+<li>任意 a b 组成的任意长度的字符串<blockquote>
+<p>{ε, a, b, aa, bb, ab, ba, aaa, bbb, aab, aba, babbababbab, …}</p>
+</blockquote>
+</li>
+<li><code>a((a|b*)(bb|(cc)*)|dd)</code></li>
+</ol>
+<h2 id="2"><a href="#2" class="headerlink" title="2"></a>2</h2><ol>
+<li><code>^[\+\-]?(0|0?[1-9][0-9]*)(\.\d+)?([Ee][\+\-]?0?[1-9]+)?$</code></li>
+<li><pre><code>25x -&gt; 25[0-5]
+2xx -&gt; 2[0-4]\d
+any -&gt; [01]?\d\d?
+number -&gt; 2xx | 25x | any
+ip -&gt; number . number . number . number
+</code></pre></li>
+</ol>
+<p>((2[0-4]\d|25[0-5]|[01]?\d\d?).){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)<br>```</p>
+<h2 id="3"><a href="#3" class="headerlink" title="3"></a>3</h2><ol>
+<li>匹配连续出现两次以上相同单词的字符串，比如 <code>mc mc mc</code></li>
+<li>匹配一行不包含 <code>RegularExpression</code> 这个单词的字符串</li>
+</ol>
+</div></div><script type="text/x-mathjax-config">
+   MathJax.Hub.Config({"HTML-CSS": { preferredFont: "TeX", availableFonts: ["STIX","TeX"], linebreaks: { automatic:true }, EqnChunk: (MathJax.Hub.Browser.isMobile ? 10 : 50) },
+        tex2jax: { inlineMath: [ ["$", "$"], ["\\(","\\)"] ], processEscapes: true, ignoreClass: "tex2jax_ignore|dno",skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']},
+        TeX: {  noUndefined: { attributes: { mathcolor: "red", mathbackground: "#FFEEEE", mathsize: "90%" } }, Macros: { href: "{}" } },
+        messageStyle: "none"
+    }); 
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!--.post-main.post-comment--><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

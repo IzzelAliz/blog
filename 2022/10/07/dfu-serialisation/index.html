@@ -1,0 +1,222 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>DataFixerUpper 序列化简介 | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2022-10-07</div></div></div><div class="container post-header"><h1>DataFixerUpper 序列化简介</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#某种数据"><span class="toc-number">1.</span> <span class="toc-text">某种数据</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#数据组合和变换"><span class="toc-number">2.</span> <span class="toc-text">数据组合和变换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Record"><span class="toc-number">2.1.</span> <span class="toc-text">Record</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#其他的数据类型"><span class="toc-number">2.2.</span> <span class="toc-text">其他的数据类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Codec-变换"><span class="toc-number">2.3.</span> <span class="toc-text">Codec 变换</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#什么是-App"><span class="toc-number">3.</span> <span class="toc-text">什么是 App</span></a></li></ol></details></div><div class="container post-content"><p>Minecraft 在 1.13 提供了模块化数据访问和序列化的类库 DataFixerUpper，本文简单介绍其序列化部分。</p>
+<p>DataFixerUpper 中的核心类是 <code>Codec</code>，结合了 <code>Encoder</code> 和 <code>Decoder</code> 两个类的功能。它们都是无状态的不可变对象，用于变换不可变数据。</p>
+<p>其中，<code>Codec&lt;A&gt;</code> 代表 <code>A</code> 的数据编码，本质上是两个方法，序列化和反序列化方法的组合。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token comment" spellcheck="true">// Decoder，也就是反序列化</span>
+<span class="token keyword">int</span> result <span class="token operator">=</span> <span class="token function">parseAsInt</span><span class="token punctuation">(</span><span class="token function">readAsString</span><span class="token punctuation">(</span><span class="token function">decompressBytes</span><span class="token punctuation">(</span><span class="token comment" spellcheck="true">/* 某种数据 */</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment" spellcheck="true">// Encoder，也就是序列化</span>
+<span class="token keyword">byte</span><span class="token punctuation">[</span><span class="token punctuation">]</span> result <span class="token operator">=</span> <span class="token function">compressBytes</span><span class="token punctuation">(</span><span class="token function">stringToBytes</span><span class="token punctuation">(</span><span class="token function">intToString</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>Codec</code> 就是上面这些方法的抽象表示。</p>
+<h2 id="某种数据"><a href="#某种数据" class="headerlink" title="某种数据"></a>某种数据</h2><p>DFU 中使用 <code>DynamicOps&lt;T&gt;</code> 表示数据的序列化格式，在 Minecraft 环境下有 JsonOps 和 NbtOps。DynamicOps 的参数 <code>T</code> 用于表示数据的基本类型，对于 NbtOps 而言为 <code>Tag</code> 类。</p>
+<p>一个 <code>DynamicOps&lt;T&gt;</code> 和一个 <code>T</code> 的实例，或者说 <code>new Dynamic&lt;T&gt;(DynamicOps&lt;T&gt;, T)</code>，组成了反序列化的数据来源，通过 <code>parse</code> 和其他一系列方法进行反序列化：</p>
+<pre class="line-numbers language-java"><code class="language-java">DataResult<span class="token operator">&lt;</span>Integer<span class="token operator">></span> result <span class="token operator">=</span> Codec<span class="token punctuation">.</span>INT<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>JsonOps<span class="token punctuation">.</span>INSTANCE<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">JsonPrimitive</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">assert</span> result<span class="token punctuation">.</span><span class="token function">result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">42</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>反序列化得到的 <code>DataResult&lt;A&gt;</code> 是反序列化的结果或者错误，分别可以用 <code>result()</code> 和 <code>error()</code> 获取。</p>
+<h2 id="数据组合和变换"><a href="#数据组合和变换" class="headerlink" title="数据组合和变换"></a>数据组合和变换</h2><p>DFU 编写 Codec 的方式大多是通过组合和变换已有的 Codec 进行的，绝大部分情况下不需要自行实现 <code>Encoder</code> 和 <code>Decoder</code> 中的方法。</p>
+<table>
+<thead>
+<tr>
+<th>Codec</th>
+<th>Java 类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BOOL</td>
+<td>Boolean</td>
+</tr>
+<tr>
+<td>BYTE</td>
+<td>Byte</td>
+</tr>
+<tr>
+<td>SHORT</td>
+<td>Short</td>
+</tr>
+<tr>
+<td>INT</td>
+<td>Integer</td>
+</tr>
+<tr>
+<td>LONG</td>
+<td>Long</td>
+</tr>
+<tr>
+<td>FLOAT</td>
+<td>Float</td>
+</tr>
+<tr>
+<td>DOUBLE</td>
+<td>Double</td>
+</tr>
+<tr>
+<td>STRING</td>
+<td>String</td>
+</tr>
+<tr>
+<td>BYTE_BUFFER</td>
+<td>ByteBuffer(byte[])</td>
+</tr>
+<tr>
+<td>INT_STREAM</td>
+<td>IntStream(int[])</td>
+</tr>
+<tr>
+<td>LONG_STREAM</td>
+<td>LongStream(long[])</td>
+</tr>
+</tbody></table>
+<p>除去以上的基本类型数据，如果想自定义更复杂的数据类型就需要组合了。</p>
+<h3 id="Record"><a href="#Record" class="headerlink" title="Record"></a>Record</h3><p>Record，和 Java 16 正式加入的 Records 对应，表示一个不可变的 Java 对象，以键值对编码。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> record <span class="token function">User</span><span class="token punctuation">(</span>String id<span class="token punctuation">,</span> <span class="token keyword">double</span> balance<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">static</span> Codec<span class="token operator">&lt;</span>User<span class="token operator">></span> CODEC <span class="token operator">=</span> RecordCodecBuilder<span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>it <span class="token operator">-</span><span class="token operator">></span> it<span class="token punctuation">.</span><span class="token function">group</span><span class="token punctuation">(</span>
+        Codec<span class="token punctuation">.</span>STRING<span class="token punctuation">.</span><span class="token function">fieldOf</span><span class="token punctuation">(</span><span class="token string">"id"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forGetter</span><span class="token punctuation">(</span>User<span class="token operator">:</span><span class="token operator">:</span>id<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        Codec<span class="token punctuation">.</span>DOUBLE<span class="token punctuation">.</span><span class="token function">fieldOf</span><span class="token punctuation">(</span><span class="token string">"balance"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forGetter</span><span class="token punctuation">(</span>User<span class="token operator">:</span><span class="token operator">:</span>balance<span class="token punctuation">)</span>
+    <span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>it<span class="token punctuation">,</span> User<span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如上，创建一个 Record Codec 通常通过 <code>RecordCodecBuilder.create</code> 进行，通过向 <code>Instance</code> 实例（那个 <code>it</code>）提供数个对应字段的 Codec 和构造方法引用，创建对应 Codec。</p>
+<p>为了方便，通常按照构造方法参数的顺序提供字段 Codec，这样最后调用 <code>apply</code> 传入的构造方法就可以直接写成方法引用的形式。</p>
+<p>除 <code>fieldOf</code> 以外，还可以用 <code>optionalFieldOf</code> 提供一个 <code>Optional&lt;A&gt;</code> 作为参数，或者通过 <code>optionalFieldOf</code> 的第二个参数提供默认值。</p>
+<h3 id="其他的数据类型"><a href="#其他的数据类型" class="headerlink" title="其他的数据类型"></a>其他的数据类型</h3><p>其他的复杂数据类型，其实也就是 <code>List&lt;A&gt;</code> 和 <code>Map&lt;A, B&gt;</code> 了。</p>
+<p>通过调用 <code>listOf</code> 就可以获得 <code>Codec&lt;A&gt;</code> 的列表形式 <code>Codec&lt;List&lt;A&gt;&gt;</code>：</p>
+<pre class="line-numbers language-java"><code class="language-java">Codec<span class="token operator">&lt;</span>List<span class="token operator">&lt;</span>User<span class="token operator">>></span> usersCodec <span class="token operator">=</span> User<span class="token punctuation">.</span>CODEC<span class="token punctuation">.</span><span class="token function">listOf</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>通过调用 <code>Codec.unboundedMap(Codec&lt;A&gt;, Codec&lt;B&gt;)</code> 就可以获得一个基础的 <code>Codec&lt;Map&lt;A, B&gt;&gt;</code>：</p>
+<pre class="line-numbers language-java"><code class="language-java">Codec<span class="token operator">&lt;</span>Map<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span> User<span class="token operator">>></span> usersCodec <span class="token operator">=</span> Codec<span class="token punctuation">.</span><span class="token function">unboundedMap</span><span class="token punctuation">(</span>Codec<span class="token punctuation">.</span>STRING<span class="token punctuation">,</span> User<span class="token punctuation">.</span>CODEC<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>DFU 还内置了 <code>Either&lt;A, B&gt;</code> 用于表示 A 或 B，<code>Pair&lt;A, B&gt;</code> 用于表示 A 和 B，可用 Codec 类下同名静态方法创建。</p>
+<p>DFU 中表示“空”的值是 <code>Unit</code>，可以用 <code>Codec.EMPTY.codec()</code> 获得其 Codec。</p>
+<p>Codec 中有一类方法 <code>Codec.dispatch</code> 可以根据不同键名对值提供不同 Codec，Minecraft 中类似 ParticleType 中根据不同注册 ID 提供不同 Codec 即是这样实现的。</p>
+<h3 id="Codec-变换"><a href="#Codec-变换" class="headerlink" title="Codec 变换"></a>Codec 变换</h3><p>另一种创建数据 Codec 的方法是对已有的 Codec 进行变换。</p>
+<p>对于两边互相兼容的类型，可以用 <code>xmap</code> 变换：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> record <span class="token function">Bank</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>User<span class="token operator">></span> users<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">static</span> Codec<span class="token operator">&lt;</span>Bank<span class="token operator">></span> CODEC <span class="token operator">=</span> User<span class="token punctuation">.</span>CODEC<span class="token punctuation">.</span><span class="token function">listOf</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">xmap</span><span class="token punctuation">(</span>Bank<span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">,</span> Bank<span class="token operator">:</span><span class="token operator">:</span>users<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>对于可能不兼容的类型，可以用 <code>comapFlatMap</code> 或者 <code>flatXmap</code> 进行变换：</p>
+<pre class="line-numbers language-java"><code class="language-java">Codec<span class="token operator">&lt;</span>UUID<span class="token operator">></span> UUID_CODEC <span class="token operator">=</span> Codec<span class="token punctuation">.</span>STRING<span class="token punctuation">.</span><span class="token function">comapFlatMap</span><span class="token punctuation">(</span>it <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> DataResult<span class="token punctuation">.</span><span class="token function">success</span><span class="token punctuation">(</span>UUID<span class="token punctuation">.</span><span class="token function">fromString</span><span class="token punctuation">(</span>it<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IllegalArgumentException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> DataResult<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span>it <span class="token operator">+</span> <span class="token string">" is not UUID"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">,</span> UUID<span class="token operator">:</span><span class="token operator">:</span>toString<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>虽然经过组合和变换后的 <code>Codec&lt;A&gt;</code> 类型是一样的，但是不同的组合和变换方式会导致序列化后的结果不同。例如，上文 Bank 的 JSON 序列化形式可能是：</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">[</span>
+  <span class="token punctuation">{</span>
+    <span class="token property">"user"</span><span class="token operator">:</span> <span class="token string">"zzzz"</span><span class="token punctuation">,</span>
+    <span class="token property">"balance"</span><span class="token operator">:</span> <span class="token number">42.0</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>如果按照 <code>RecordCodecBuilder</code> 来创建 Bank Codec 的话，就可能是这样的：</p>
+<pre class="line-numbers language-json"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"users"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"user"</span><span class="token operator">:</span> <span class="token string">"zzzz"</span><span class="token punctuation">,</span>
+      <span class="token property">"balance"</span><span class="token operator">:</span> <span class="token number">42.0</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>又比如，Minecraft 提供在 <code>SerializableUUID.CODEC</code> 的 UUID Codec 是用长度为 4 的 int 数组存储，而上文的则是字符串。</p>
+<p>可以参照 <a href="https://docs.minecraftforge.net/en/1.19.x/datastorage/codecs/" target="_blank" rel="noopener">https://docs.minecraftforge.net/en/1.19.x/datastorage/codecs/</a> 更多内容进行代码编写。</p>
+<p>Minecraft 给一些常见的类都提供了 Codec，位于对应类的 <code>CODEC</code> 字段或者 <code>ExtraCodecs</code> 类中。</p>
+<p>我自己也写了一个<a href="https://github.com/IzzelAliz/extra-codecs" target="_blank" rel="noopener">小工具</a>，可以生成基于基础 Java 类型的 Record 类的 Codec。例如，上文 Bank 可以直接调用 <code>TypeCodec.of(Bank.class)</code> 获得对应 Codec。</p>
+<h2 id="什么是-App"><a href="#什么是-App" class="headerlink" title="什么是 App"></a>什么是 App</h2><p>在 DFU 中随处可见 <code>App&lt;F, A&gt;</code> 的形式，但是这个类里面没有任何方法，这是什么呢？</p>
+<p>在 Java 中，<code>Stream&lt;A&gt;</code> 和 <code>Optional&lt;A&gt;</code> 都有 <code>flatMap</code> 方法，类似：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Optional</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token operator">&lt;</span>B<span class="token operator">></span> Optional<span class="token operator">&lt;</span>B<span class="token operator">></span> <span class="token function">flatMap</span><span class="token punctuation">(</span>Function<span class="token operator">&lt;</span>A<span class="token punctuation">,</span> Optional<span class="token operator">&lt;</span>B<span class="token operator">>></span> f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Stream</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token operator">&lt;</span>B<span class="token operator">></span> Stream<span class="token operator">&lt;</span>B<span class="token operator">></span> <span class="token function">flatMap</span><span class="token punctuation">(</span>Function<span class="token operator">&lt;</span>A<span class="token punctuation">,</span> Stream<span class="token operator">&lt;</span>B<span class="token operator">>></span> f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>仅有 <code>flatMap</code> 方法就可以轻松实现一个功能 <code>flatten</code>，可以将类似 <code>Optional&lt;Optional&lt;A&gt;&gt;</code> 和 <code>Stream&lt;Stream&lt;A&gt;&gt;</code> 拉平为 <code>Optional&lt;A&gt;</code> 和 <code>Stream&lt;A&gt;</code>，比如：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">static</span> <span class="token operator">&lt;</span>A<span class="token operator">></span> Optional<span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token function">flatten</span><span class="token punctuation">(</span>Optional<span class="token operator">&lt;</span>Optional<span class="token operator">&lt;</span>A<span class="token operator">>></span> optional<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> optional<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>x <span class="token operator">-</span><span class="token operator">></span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">static</span> <span class="token operator">&lt;</span>A<span class="token operator">></span> Stream<span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token function">flatten</span><span class="token punctuation">(</span>Stream<span class="token operator">&lt;</span>Stream<span class="token operator">&lt;</span>A<span class="token operator">>></span> stream<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> stream<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>x <span class="token operator">-</span><span class="token operator">></span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>自然而然，一样的代码不应该写这么多遍，所以我们会希望有一种长成这样的代码：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">interface</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token operator">&lt;</span>B<span class="token operator">></span> FlatMap<span class="token operator">&lt;</span>B<span class="token operator">></span> <span class="token function">flatMap</span><span class="token punctuation">(</span>Function<span class="token operator">&lt;</span>A<span class="token punctuation">,</span> FlatMap<span class="token operator">&lt;</span>B<span class="token operator">>></span> f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">static</span> <span class="token operator">&lt;</span>A<span class="token operator">></span> FlatMap<span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token function">flatten</span><span class="token punctuation">(</span>FlatMap<span class="token operator">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>A<span class="token operator">>></span> flatMap<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> flatMap<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>x <span class="token operator">-</span><span class="token operator">></span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Optional</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token keyword">implements</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">/* ... */</span> <span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Stream</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token keyword">implements</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">/* ... */</span> <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>但是问题出现了，经过 <code>flatten</code> 后类型丢失了，我们实际上想要的是这种方法：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">static</span> <span class="token operator">&lt;</span>F <span class="token keyword">extends</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> A<span class="token operator">></span> F<span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token function">flatten</span><span class="token punctuation">(</span>F<span class="token operator">&lt;</span>F<span class="token operator">&lt;</span>A<span class="token operator">>></span> flatMap<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> flatMap<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>x <span class="token operator">-</span><span class="token operator">></span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>但是在 Java 中不能这样做（这当然不是什么符合标准的 Java 语法），所以我们退而求其次，把这个 F 加在 <code>FlatMap</code> 上：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">interface</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>F<span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token operator">&lt;</span>B<span class="token operator">></span> FlatMap<span class="token operator">&lt;</span>F<span class="token punctuation">,</span> B<span class="token operator">></span> <span class="token function">flatMap</span><span class="token punctuation">(</span>Function<span class="token operator">&lt;</span>A<span class="token punctuation">,</span> FlatMap<span class="token operator">&lt;</span>F<span class="token punctuation">,</span> B<span class="token operator">>></span> f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">static</span> <span class="token operator">&lt;</span>F<span class="token punctuation">,</span> A<span class="token operator">></span> FlatMap<span class="token operator">&lt;</span>F<span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token function">flatten</span><span class="token punctuation">(</span>FlatMap<span class="token operator">&lt;</span>F<span class="token punctuation">,</span> <span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>F<span class="token punctuation">,</span> A<span class="token operator">>></span> flatMap<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> flatMap<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>x <span class="token operator">-</span><span class="token operator">></span> x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Optional</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token keyword">implements</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>Optional<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">/* ... */</span> <span class="token punctuation">}</span>
+<span class="token keyword">class</span> <span class="token class-name">Stream</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token keyword">implements</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>Stream<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token punctuation">{</span> <span class="token comment" spellcheck="true">/* ... */</span> <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里 <code>implements FlatMap&lt;Optional&lt;?&gt;, ...&gt;</code> 使用 wildcard type 而不是 <code>Optional&lt;A&gt;</code> 是因为我们希望传入 <code>flatten</code> 的参数 <code>F&lt;F&lt;A&gt;&gt;</code> 中两个 <code>F</code> 的类型是一致的，而不是根据 <code>A</code> 的不同变化的（仔细想想这里的 F 到底表示什么）。</p>
+<p>所以我们就能写出这样的代码：</p>
+<pre class="line-numbers language-java"><code class="language-java">Optional<span class="token operator">&lt;</span>Optional<span class="token operator">&lt;</span>String<span class="token operator">>></span> optional <span class="token operator">=</span> <span class="token comment" spellcheck="true">/* ... */</span><span class="token punctuation">;</span>
+FlatMap<span class="token operator">&lt;</span>Optional<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> String<span class="token operator">></span> flatten <span class="token operator">=</span> FlatMap<span class="token punctuation">.</span><span class="token function">flatten</span><span class="token punctuation">(</span>optional<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>现在 Optional 的类型保留了，虽然返回的仍然是 FlatMap，但是只需要加上一个简单的工具方法转换一次就可以了：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">static</span> <span class="token operator">&lt;</span>A<span class="token operator">></span> Optional<span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token function">unbox</span><span class="token punctuation">(</span>FlatMap<span class="token operator">&lt;</span>Optional<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> A<span class="token operator">></span> f<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token punctuation">(</span>Optional<span class="token operator">&lt;</span>A<span class="token operator">></span><span class="token punctuation">)</span> f<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+Optional<span class="token operator">&lt;</span>String<span class="token operator">></span> flatten <span class="token operator">=</span> <span class="token function">unbox</span><span class="token punctuation">(</span>FlatMap<span class="token punctuation">.</span><span class="token function">flatten</span><span class="token punctuation">(</span>optional<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最后，因为 <code>FlatMap&lt;F, A&gt;</code> 中的 <code>F</code> 实际上仅在编译期存在，作为类型约束的代码提示（不是吗？），所以我们可以定义一个空的类 <code>Optional.Mu</code> 来代表 <code>Optional</code>：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">class</span> <span class="token class-name">Optional</span><span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token keyword">implements</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>Optional<span class="token punctuation">.</span>Mu<span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">Mu</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">static</span> <span class="token operator">&lt;</span>A<span class="token operator">></span> Optional<span class="token operator">&lt;</span>A<span class="token operator">></span> <span class="token function">unbox</span><span class="token punctuation">(</span>FlatMap<span class="token operator">&lt;</span>Optional<span class="token punctuation">.</span>Mu<span class="token punctuation">,</span> A<span class="token operator">></span> f<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token punctuation">(</span>Optional<span class="token operator">&lt;</span>A<span class="token operator">></span><span class="token punctuation">)</span> f<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>像这样的代码，我们可以在 DataFixerUpper 里面找到很多。</p>
+<p>再回头看到 <code>FlatMap</code> 这个接口，它表示了两个意思：</p>
+<ul>
+<li>一个叫 <code>F&lt;A&gt;</code> 的类型</li>
+<li>实现了叫 <code>flatMap</code> 的方法</li>
+</ul>
+<p>自然，我们可以单独有一个概念只表示 <code>F&lt;A&gt;</code>，比如 —— <code>App&lt;F, A&gt;</code>。</p>
+<p>最终揭秘：<code>App&lt;F, A&gt;</code> 用于表示高阶类型（higher kinded type）<code>F&lt;A&gt;</code>，这个接口是因为 Java 本身不支持高阶类型而出现的，作为一种标记使用。</p>
+<p>在 DFU 中，它实际的签名是 <code>App&lt;F extends K1, A&gt;</code>，其中：</p>
+<ul>
+<li><code>K1</code> 用于代表类似 <code>F&lt;_&gt;</code> 一样的类型，或者说一个单参数的类型构造器（type constructor），比如说 <code>List&lt;_&gt;</code>；</li>
+<li><code>App&lt;F, A&gt;</code> 代表用类型 <code>A</code> 应用在 <code>F</code> 这个类型构造器上，比如说 <code>App&lt;List, String&gt;</code> 代表 <code>List&lt;String&gt;</code>；</li>
+</ul>
+<p>在实际使用中，通常是让类似 FlatMap 的类去继承 App 这样的类，类似：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">interface</span> <span class="token class-name">FlatMap</span><span class="token operator">&lt;</span>F <span class="token keyword">extends</span> <span class="token class-name">FlatMap<span class="token punctuation">.</span>Mu</span><span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token keyword">extends</span> <span class="token class-name">App</span><span class="token operator">&lt;</span>F<span class="token punctuation">,</span> A<span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">interface</span> <span class="token class-name">Mu</span> <span class="token keyword">extends</span> <span class="token class-name">K1</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token operator">&lt;</span>B<span class="token operator">></span> FlatMap<span class="token operator">&lt;</span>F<span class="token punctuation">,</span> B<span class="token operator">></span> <span class="token function">flatMap</span><span class="token punctuation">(</span>Function<span class="token operator">&lt;</span>A<span class="token punctuation">,</span> FlatMap<span class="token operator">&lt;</span>F<span class="token punctuation">,</span> B<span class="token operator">>></span> f<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>同样的，DFU 也有 <code>App2&lt;F extends K2, A, B&gt;</code> 这样的类型，代表了有两个参数的高阶类型 <code>F&lt;A, B&gt;</code>。</p>
+<p>结束之前，我们可以通过 Scala 这个支持高阶类型的语言来看看，为什么 <code>App</code> 这个接口是因为 Java 不支持高阶类型而存在的（代码来自 <a href="https://github.com/typelevel/cats/blob/main/core/src/main/scala/cats/FlatMap.scala" target="_blank" rel="noopener">cats</a>）：</p>
+<pre class="line-numbers language-scala"><code class="language-scala"><span class="token keyword">trait</span> FlatMap<span class="token punctuation">[</span>F<span class="token punctuation">[</span>_<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token punctuation">{</span>
+  <span class="token keyword">def</span> flatMap<span class="token punctuation">[</span>A<span class="token punctuation">,</span> B<span class="token punctuation">]</span><span class="token punctuation">(</span>fa<span class="token operator">:</span> F<span class="token punctuation">[</span>A<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">(</span>f<span class="token operator">:</span> A <span class="token keyword">=></span> F<span class="token punctuation">[</span>B<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token operator">:</span> F<span class="token punctuation">[</span>B<span class="token punctuation">]</span>
+
+  <span class="token keyword">def</span> flatten<span class="token punctuation">[</span>A<span class="token punctuation">]</span><span class="token punctuation">(</span>ffa<span class="token operator">:</span> F<span class="token punctuation">[</span>F<span class="token punctuation">[</span>A<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token operator">:</span> F<span class="token punctuation">[</span>A<span class="token punctuation">]</span> <span class="token operator">=</span> flatMap<span class="token punctuation">(</span>ffa<span class="token punctuation">)</span><span class="token punctuation">(</span>x <span class="token keyword">=></span> x<span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>本文没有介绍 <code>RecordCodecBuilder.Instance</code> 为何物（type class），虽然已经很接近了，读者可以阅读 cats 的 <a href="https://typelevel.org/cats/typeclasses/applicative.html" target="_blank" rel="noopener">Applicative</a> 文档进行了解。</p>
+<p>本文也没有介绍 DFU 的 optics 包和其他几个包的内容，因为序列化部分并不涉及这部分代码，读者可以阅读 <a href="https://arxiv.org/ftp/arxiv/papers/1703/1703.10857.pdf" target="_blank" rel="noopener">Pickering, M., Gibbons, J., &amp; Wu, N. (2017). Profunctor Optics: Modular Data Accessors</a> 进行了解。</p>
+</div></div><!--.post-main.post-comment--><div id="gitalk-container"></div><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css"><script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script><script>const gitalk = new Gitalk({
+    clientID: '1b4c00731894d12d4568',
+    clientSecret: '1fa321199cc198f80203716d073c8f2ff2dec849',
+    repo: 'blog',
+    owner: 'IzzelAliz',
+    admin: ['IzzelAliz'],
+    id: location.pathname,
+    distractionFreeMode: false,
+    proxy: 'https://blog-api.izzel.io/?https://github.com/login/oauth/access_token'
+})
+gitalk.render('gitalk-container')</script><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

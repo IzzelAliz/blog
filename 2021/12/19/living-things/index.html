@@ -1,0 +1,244 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>聊聊生物和 AI | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2021-12-19</div></div></div><div class="container post-header"><h1>聊聊生物和 AI</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#有感知的实体-Goal"><span class="toc-number">1.</span> <span class="toc-text">有感知的实体 - Goal</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Goal-生命周期"><span class="toc-number">1.1.</span> <span class="toc-text">Goal 生命周期</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Goal-协调机制"><span class="toc-number">1.2.</span> <span class="toc-text">Goal 协调机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Goal-注册"><span class="toc-number">1.3.</span> <span class="toc-text">Goal 注册</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#有意识的生物-Brain"><span class="toc-number">2.</span> <span class="toc-text">有意识的生物 - Brain</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Memory"><span class="toc-number">2.1.</span> <span class="toc-text">Memory</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sensor"><span class="toc-number">2.2.</span> <span class="toc-text">Sensor</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Behavior"><span class="toc-number">2.3.</span> <span class="toc-text">Behavior</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Activity"><span class="toc-number">2.4.</span> <span class="toc-text">Activity</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Schedule"><span class="toc-number">2.5.</span> <span class="toc-text">Schedule</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#后记"><span class="toc-number">3.</span> <span class="toc-text">后记</span></a></li></ol></details></div><div class="container post-content"><p>一只羊停下吃草，抬头望着你… 这其实不会发生。</p>
+<p>本文介绍 Minecraft 实体相关的目标选择器（Goal Selector）、脑（Brain）等内容，基于 Minecraft 1.18 版本，使用官方映射表。</p>
+<h2 id="有感知的实体-Goal"><a href="#有感知的实体-Goal" class="headerlink" title="有感知的实体 - Goal"></a>有感知的实体 - Goal</h2><p>如果一款游戏里面的生物不会对玩家的行为产生反馈，那就太无聊了。想象这样的场景，NPC 对经过的玩家熟视无睹，和玩家对话时机械地盯着虚空…</p>
+<p>在 Minecraft 里，玩家可以很容易地将实体分为两类：无感知的实体，比如船；和有感知的「生物」，比如羊。</p>
+<p>回顾一下，羊会干什么呢？</p>
+<p>和大部分生物一样，羊会望向接近的玩家；羊也会跟着拿着小麦的玩家，还会吃草…将这些能力一一组合起来，便成为了一个「有感知」的生物。而将这些东西组合在一起的系统，被称为目标选择器。</p>
+<p>望向玩家、吃草、跟随玩家都是目标（<code>Goal</code>），它们以不同的优先度出现在目标选择器中。对于一个普通的羊，它会有这些目标：</p>
+<table>
+<thead>
+<tr>
+<th align="left">Priority</th>
+<th align="left">Goal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">0</td>
+<td align="left">FloatGoal（浮在水面上）</td>
+</tr>
+<tr>
+<td align="left">1</td>
+<td align="left">PanicGoal</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left">BreedGoal</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left">TemptGoal（跟随小麦）</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left">FollowParentGoal</td>
+</tr>
+<tr>
+<td align="left">5</td>
+<td align="left">EatBlockGoal（吃草）</td>
+</tr>
+<tr>
+<td align="left">6</td>
+<td align="left">WaterAvoidingRandomStrollGoal</td>
+</tr>
+<tr>
+<td align="left">7</td>
+<td align="left">LookAtPlayerGoal（望向玩家）</td>
+</tr>
+<tr>
+<td align="left">8</td>
+<td align="left">RandomLookAroundGoal</td>
+</tr>
+</tbody></table>
+<p>这些目标以某种形式共同工作：毕竟羊不是时时刻刻都在吃草，也不是时时刻刻都在随机乱走，必然存在一种机制管理它们何时运行，使得它们互相协调。</p>
+<h3 id="Goal-生命周期"><a href="#Goal-生命周期" class="headerlink" title="Goal 生命周期"></a>Goal 生命周期</h3><p>目光转向 <code>Goal</code> 类的几个方法：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">package</span> net<span class="token punctuation">.</span>minecraft<span class="token punctuation">.</span>world<span class="token punctuation">.</span>entity<span class="token punctuation">.</span>ai<span class="token punctuation">.</span>goal<span class="token punctuation">;</span>
+
+<span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">Goal</span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">boolean</span> <span class="token function">canUse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">canContinueToUse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">tick</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">isInterruptable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setFlags</span><span class="token punctuation">(</span>EnumSet<span class="token operator">&lt;</span>Goal<span class="token punctuation">.</span>Flag<span class="token operator">></span> flags<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> EnumSet<span class="token operator">&lt;</span>Goal<span class="token punctuation">.</span>Flag<span class="token operator">></span> <span class="token function">getFlags</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">public</span> <span class="token keyword">enum</span> Flag <span class="token punctuation">{</span>
+    MOVE<span class="token punctuation">,</span> LOOK<span class="token punctuation">,</span> JUMP<span class="token punctuation">,</span> TARGET
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>前五个方法顾名思义，按照这样的流程运行：</p>
+<p><img src="goal.png" alt></p>
+<p>图中黑圈为未运行的 Goal，红圈为正在运行的。以 <code>TemptGoal</code> 为例，这个 Goal 会这样编写：</p>
+<ul>
+<li><code>canUse</code> 进行开始条件的判断：寻找附近拿着小麦的玩家。为了性能考虑，这里还可以尽量的缓存一些需要查询的东西，比如对应的玩家、坐标…等等</li>
+<li><code>start</code> 执行目标开始的逻辑，当然也可以什么都不干。</li>
+<li><code>tick</code> 每个游戏刻更新目标，比如让羊向玩家走一步。</li>
+<li><code>canContinueToUse</code> 检查是否仍然应该继续执行：玩家可能走远了，或者把小麦收起来了，或者有新的玩家拿着小麦走来了。</li>
+<li><code>stop</code> 执行停止的逻辑，这里应该把一开始缓存的东西全部重置掉。</li>
+</ul>
+<p>读者可以参考许多源码进一步加深 Goal 生命周期的理解。</p>
+<h3 id="Goal-协调机制"><a href="#Goal-协调机制" class="headerlink" title="Goal 协调机制"></a>Goal 协调机制</h3><p>我们知道如果羊被玩家打了一下，会到处跑来跑去，此时玩家拿出小麦的话，合理的现象应该是羊还会继续跑来跑去。从上面的表中可以得知，<code>PanicGoal</code> 的优先级高于 <code>TemptGoal</code>，这很合理。</p>
+<p>但这引起了一个新的问题，<code>FloatGoal</code>（让生物浮在水面上）的优先度是最高的，但是玩家还是可以用小麦去吸引浮在水面的羊。实际上，这是一个比单纯的优先度更为复杂的机制。</p>
+<p>每个 Goal 可能会有一些 <code>Flag</code>，或者把它叫做锁。上面的例子里，<code>FloatGoal</code> 有 <code>JUMP</code> 的锁，<code>PanicGoal</code> 和 <code>TemptGoal</code> 都有 <code>MOVE</code> 的锁。这些锁是「互斥」的，也就是说，同一时间某一种 Flag 只会对应一个 Goal。自然，不持有任何锁的 Goal 不会与其他 Goal 互斥，它们不受影响始终执行。</p>
+<p>那么如果同时有两个 <code>canUse</code> 的 Goal 都有 <code>MOVE</code> 呢？显而易见，优先度高（数字小）的执行。但这又带来了新的问题：如果玩家拿着小麦打了一下羊，优先度高的 Goal 突然可用了，优先度低的跟随小麦会怎样呢？当然就应该中断了。</p>
+<p>回到 <code>Goal</code> 类的后三个方法：</p>
+<ul>
+<li><code>isInterruptable</code> 表明一个 Goal 能否被其他 Goal 中断</li>
+<li><code>setFlags</code> 用来设置 Goal Flag，一般在构造方法中调用</li>
+</ul>
+<p>在 Minecraft 1.18 中，Mojang 引入了一个小优化：观察到通常 <code>canUse</code> 执行最多的代码逻辑来判断和缓存状态，但未运行的 Goal 并不影响实体，并且让羊慢一两刻再对玩家的小麦进行响应通常不会破坏游戏的沉浸感。</p>
+<p>优化的方法是，每 N 刻中只有最后一刻进行 <code>canUse</code>/<code>canContinueToUse</code> 检查，其他 N-1 刻只进行 <code>tick</code> 的调用。在 1.18 这个 N 是 2，但也不排除以后会增加，所以不要对这个 N 的具体数值做假设。</p>
+<p>回到 <code>Goal</code> 类，1.18 起提供了以下两个方法：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">Goal</span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">requiresUpdateEveryTick</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">protected</span> <span class="token keyword">int</span> <span class="token function">adjustedTickDelay</span><span class="token punctuation">(</span><span class="token keyword">int</span> tick<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中：</p>
+<ul>
+<li><code>requiresUpdateEveryTick</code> 让这个 Goal 每一刻都更新，可以用于实时性高的情景</li>
+<li><code>adjustedTickDelay</code> 相当于 <code>tick/N</code></li>
+</ul>
+<p>考虑 <code>PanicGoal</code>，如果我们想让羊到处乱跑十秒钟，就会这么写（并非 Mojang 实现）：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">PanicGoal</span> <span class="token keyword">extends</span> <span class="token class-name">Goal</span> <span class="token punctuation">{</span>
+  <span class="token keyword">private</span> <span class="token keyword">int</span> ticks<span class="token punctuation">;</span>
+
+  <span class="token annotation punctuation">@Override</span> <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>ticks <span class="token operator">=</span> <span class="token function">adjustedTickDelay</span><span class="token punctuation">(</span><span class="token number">10</span> <span class="token operator">*</span> <span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment" spellcheck="true">// 10s</span>
+  <span class="token punctuation">}</span>
+
+  <span class="token annotation punctuation">@Override</span> <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">canContinueToUse</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span>ticks<span class="token operator">--</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Goal-注册"><a href="#Goal-注册" class="headerlink" title="Goal 注册"></a>Goal 注册</h3><p>实际在 Minecraft 中提供了两个 GoalSelector，另一个用于攻击目标的选择。对于有攻击性的生物，一般在 <code>goalSelector</code> 中注册一个 <code>MeleeAttackGoal</code>（近战攻击）或者 <code>RangedAttackGoal</code>（远程攻击），而在 <code>targetSelector</code> 中注册选择某个敌人进行攻击的 Goal，比如 <code>HurtByTargetGoal</code>（攻击生物的敌人）或者 <code>NearestAttackableTargetGoal</code>（最近的敌人）。</p>
+<p>目标通常在 <code>Mob#registerGoals</code> 方法内注册，考虑烈焰人：</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Blaze</span> <span class="token keyword">extends</span> <span class="token class-name">Mob</span> <span class="token punctuation">{</span>
+  <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">registerGoals</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>goalSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Blaze<span class="token punctuation">.</span>BlazeAttackGoal</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>goalSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">MoveTowardsRestrictionGoal</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token number">1.0D</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>goalSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">WaterAvoidingRandomStrollGoal</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token number">1.0D</span><span class="token punctuation">,</span> <span class="token number">0.0F</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>goalSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">LookAtPlayerGoal</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> Player<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token number">8.0F</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>goalSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">8</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">RandomLookAroundGoal</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>targetSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">HurtByTargetGoal</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setAlertOthers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>targetSelector<span class="token punctuation">.</span><span class="token function">addGoal</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">NearestAttackableTargetGoal</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> Player<span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="有意识的生物-Brain"><a href="#有意识的生物-Brain" class="headerlink" title="有意识的生物 - Brain"></a>有意识的生物 - Brain</h2><p>回顾 GoalSelector 系统，我们有什么呢：</p>
+<ul>
+<li>简单的生命周期 - 大多数时候够用，可如果让羊晚上去睡觉呢？</li>
+<li>简单的协调机制 - 通过优先度进行替换，Goal 之间难以沟通</li>
+<li>缺失的持久化</li>
+</ul>
+<p>为解决这些痛点，村民更新后出现了一套新的系统：Brain、Sensor（知觉）、Memory（记忆）、Behavior（行为）、Activity（活动）、Schedule（计划）。</p>
+<p>核心自然是 Brain 了，它负责存储记忆，按照计划管理活动和行为的运行停止，时不时感知环境变化：</p>
+<p><img src="brain.png" alt></p>
+<p>可见，一个行为被激活的要求变得更多了：需要有对应的记忆，也需要正在进行对应的活动。</p>
+<h3 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h3><p>Memory，也就是记忆，补齐了 Goal 系统中最大的不足：没有持久化。</p>
+<p>想象一下，假如你是一个铁匠，一个玩家<del>不死人</del>打了你一下，如果退出重进之后你就忘了，那也太便宜他了。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MemoryModuleType</span><span class="token operator">&lt;</span>U<span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token function">MemoryModuleType</span><span class="token punctuation">(</span>Optional<span class="token operator">&lt;</span>Codec<span class="token operator">&lt;</span>U<span class="token operator">>></span> codec<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Brain</span><span class="token operator">&lt;</span>E <span class="token keyword">extends</span> <span class="token class-name">LivingEntity</span><span class="token operator">></span> <span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">hasMemoryValue</span><span class="token punctuation">(</span>MemoryModuleType<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token operator">&lt;</span>U<span class="token operator">></span> <span class="token keyword">void</span> <span class="token function">eraseMemory</span><span class="token punctuation">(</span>MemoryModuleType<span class="token operator">&lt;</span>U<span class="token operator">></span> type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token operator">&lt;</span>U<span class="token operator">></span> <span class="token keyword">void</span> <span class="token function">setMemory</span><span class="token punctuation">(</span>MemoryModuleType<span class="token operator">&lt;</span>U<span class="token operator">></span> type<span class="token punctuation">,</span> <span class="token annotation punctuation">@Nullable</span> U value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token operator">&lt;</span>U<span class="token operator">></span> <span class="token keyword">void</span> <span class="token function">setMemoryWithExpiry</span><span class="token punctuation">(</span>MemoryModuleType<span class="token operator">&lt;</span>U<span class="token operator">></span> type<span class="token punctuation">,</span> U value<span class="token punctuation">,</span> <span class="token keyword">long</span> ticks<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">public</span> <span class="token operator">&lt;</span>U<span class="token operator">></span> Optional<span class="token operator">&lt;</span>U<span class="token operator">></span> <span class="token function">getMemory</span><span class="token punctuation">(</span>MemoryModuleType<span class="token operator">&lt;</span>U<span class="token operator">></span> type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>记忆可以被持久化，需要向 <code>MemoryModuleType</code> 的构造方法中传入对应的 <code>Codec</code>。Codec 类中带有一些基础类型的实例，对于更复杂的数据类型比如一个 Map，则可以使用 <code>RecordCodecBuilder</code> 进行构造。对于 Codec 和 <a href="https://github.com/Mojang/DataFixerUpper" target="_blank" rel="noopener">DataFixerUpper</a> 的具体使用方法这里不作更多介绍。</p>
+<p>记忆也可以过期，也就是「遗忘」。只需要在写入时调用 <code>setMemoryWithExpiry</code>，以刻计算。</p>
+<h3 id="Sensor"><a href="#Sensor" class="headerlink" title="Sensor"></a>Sensor</h3><p>Sensor 类似于「眼」，它们每隔一段时间进行感知，并将感知到的结果写入记忆中。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">Sensor</span><span class="token operator">&lt;</span>E <span class="token keyword">extends</span> <span class="token class-name">LivingEntity</span><span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token function">Sensor</span><span class="token punctuation">(</span><span class="token keyword">int</span> scanRate<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">protected</span> <span class="token keyword">abstract</span> <span class="token keyword">void</span> <span class="token function">doTick</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> E entity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">abstract</span> Set<span class="token operator">&lt;</span>MemoryModuleType<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> <span class="token function">requires</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>唯一的一个构造参数是扫描（<code>doTick</code>）的频率，按游戏刻计算。</p>
+<p>以感知附近拿着小麦的玩家来举例：</p>
+<ul>
+<li><code>requires</code> 代表这个 Sensor 会写入哪些记忆，比如拿着小麦的玩家</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> Set<span class="token operator">&lt;</span>MemoryModuleType<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> <span class="token function">requires</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword">return</span> Set<span class="token punctuation">.</span><span class="token function">of</span><span class="token punctuation">(</span>MemoryModuleType<span class="token punctuation">.</span>TEMPTING_PLAYER<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>doTick</code> 执行实际的逻辑，并写入记忆；如果并没有搜索到结果，则擦除记忆</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">doTick</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> LivingEntity entity<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  var brain <span class="token operator">=</span> entity<span class="token punctuation">.</span><span class="token function">getBrain</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span>var player <span class="token operator">:</span> level<span class="token punctuation">.</span><span class="token function">players</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>player<span class="token punctuation">.</span><span class="token function">getMainHandItem</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getItem</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> Items<span class="token punctuation">.</span>WHEAT<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      brain<span class="token punctuation">.</span><span class="token function">setMemory</span><span class="token punctuation">(</span>MemoryModuleType<span class="token punctuation">.</span>TEMPTING_PLAYER<span class="token punctuation">,</span> player<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+  brain<span class="token punctuation">.</span><span class="token function">eraseMemory</span><span class="token punctuation">(</span>MemoryModuleType<span class="token punctuation">.</span>TEMPTING_PLAYER<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Behavior"><a href="#Behavior" class="headerlink" title="Behavior"></a>Behavior</h3><p>Behavior 的设计与 Goal 类似，主要有三点不同：</p>
+<ul>
+<li>构造参数提供了一个 <code>entryCondition</code>，用于判断某个记忆存在（<code>VALUE_PRESENT</code>）、不存在（<code>VALUE_ABSENT</code>）或者无所谓（<code>REGISTERED</code>）。这样的设计分离了进入逻辑 —— 它被转移到 Sensor 了。不过在行为中自定义进入逻辑也是可以的，覆盖 <code>checkExtraStartConditions</code> 即可。</li>
+<li>行为开始有两个必要的条件，一个是上面的 <code>entryCondition</code> 满足对应的记忆要求，另一个是提供它的 Activity 正激活。</li>
+<li>退出条件增加了一个超时，也就是说每个行为只有 <code>[minDuration, maxDuration]</code> 中随机的一点执行时间，超时或者不能继续进行（<code>canStillUse</code>）都会导致行为停止。<code>timedOut</code> 方法可以重写，比如「浮在水面上」我们一般不希望让它超时。</li>
+</ul>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">abstract</span> <span class="token keyword">class</span> <span class="token class-name">Behavior</span><span class="token operator">&lt;</span>E <span class="token keyword">extends</span> <span class="token class-name">LivingEntity</span><span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token function">Behavior</span><span class="token punctuation">(</span>Map<span class="token operator">&lt;</span>MemoryModuleType<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> MemoryStatus<span class="token operator">></span> entryCondition<span class="token punctuation">,</span>
+                  <span class="token keyword">int</span> minDuration<span class="token punctuation">,</span> <span class="token keyword">int</span> maxDuration<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">start</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> E entity<span class="token punctuation">,</span> <span class="token keyword">long</span> gameTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">tick</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> E entity<span class="token punctuation">,</span> <span class="token keyword">long</span> gameTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">stop</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> E entity<span class="token punctuation">,</span> <span class="token keyword">long</span> gameTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">protected</span> <span class="token keyword">boolean</span> <span class="token function">canStillUse</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> E entity<span class="token punctuation">,</span> <span class="token keyword">long</span> gameTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">protected</span> <span class="token keyword">boolean</span> <span class="token function">timedOut</span><span class="token punctuation">(</span><span class="token keyword">long</span> gameTime<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">protected</span> <span class="token keyword">boolean</span> <span class="token function">checkExtraStartConditions</span><span class="token punctuation">(</span>ServerLevel level<span class="token punctuation">,</span> E entity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">public</span> <span class="token keyword">enum</span> MemoryStatus <span class="token punctuation">{</span>
+  VALUE_PRESENT<span class="token punctuation">,</span>
+  VALUE_ABSENT<span class="token punctuation">,</span>
+  REGISTERED<span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Activity"><a href="#Activity" class="headerlink" title="Activity"></a>Activity</h3><p>Activity 是一系列有优先度的行为，这一点与 Goal 系统很类似。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Brain</span><span class="token operator">&lt;</span>E <span class="token keyword">extends</span> <span class="token class-name">LivingEntity</span><span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setCoreActivities</span><span class="token punctuation">(</span>Set<span class="token operator">&lt;</span>Activity<span class="token operator">></span> activities<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">useDefaultActivity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setActiveActivityIfPossible</span><span class="token punctuation">(</span>Activity activity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setDefaultActivity</span><span class="token punctuation">(</span>Activity activity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addActivity</span><span class="token punctuation">(</span>Activity activity<span class="token punctuation">,</span> <span class="token keyword">int</span> priority<span class="token punctuation">,</span> List<span class="token operator">&lt;</span>Behavior<span class="token operator">&lt;</span>E<span class="token operator">>></span> behaviors<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">addActivityAndRemoveMemoriesWhenStopped</span><span class="token punctuation">(</span>
+    Activity activity<span class="token punctuation">,</span> List<span class="token operator">&lt;</span>Pair<span class="token operator">&lt;</span>Integer<span class="token punctuation">,</span> Behavior<span class="token operator">&lt;</span>E<span class="token operator">>>></span> behaviors<span class="token punctuation">,</span>
+    Set<span class="token operator">&lt;</span>Pair<span class="token operator">&lt;</span>MemoryModuleType<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">,</span> MemoryStatus<span class="token operator">>></span> memoryRequirements<span class="token punctuation">,</span>
+    Set<span class="token operator">&lt;</span>MemoryModuleType<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> memoryToErase<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">isActive</span><span class="token punctuation">(</span>Activity activity<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Brain 中有两类活动，<code>Core</code>（核心）和其他的活动。核心活动是一系列任何时候都激活的活动，一般类似「浮在水面上」这种行为就放在里面（<code>setCoreActivities</code>）。其他添加的活动中，有且只有一个会被激活。Activity 类中提供了一些常用的活动，比如 <code>IDLE</code>，这也是默认的活动。</p>
+<p>类似行为，活动可以有需要满足的记忆条件（<code>memoryRequirements</code>），因此 Sensor 也可以控制活动。活动也可以指定退出时自动擦除某些记忆（<code>memoryToErase</code>）。如果除了核心活动以外的活动都不满足条件，则默认的活动（<code>setDefaultActivity</code>）被激活。</p>
+<p>可能与直觉不同的是，活动退出时，正在运行的行为不会结束。</p>
+<h3 id="Schedule"><a href="#Schedule" class="headerlink" title="Schedule"></a>Schedule</h3><p>Schedule 是用于按照游戏时间定时切换活动的系统。激活计划需要手动添加一个行为 <code>UpdateActivityFromSchedule</code>，计划如何编写可以直接参考 Schedule 类中的代码。</p>
+<p>村民便是使用这套计划系统来进行白天劳作、晚上睡觉。</p>
+<pre class="line-numbers language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Brain</span><span class="token operator">&lt;</span>E <span class="token keyword">extends</span> <span class="token class-name">LivingEntity</span><span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">setSchedule</span><span class="token punctuation">(</span>Schedule schedule<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>无论是 Goal 还是 Brain 系统的设计，都无法很好地处理「事件」，类似被玩家攻击的事件是通过一个每刻进行刷新的字段实现的。</p>
+<p>如果想要很好地设计能够处理事件的 AI，可以参考这篇文章：</p>
+<p><a href="https://cs.uns.edu.ar/~ragis/Agis%20et%20al.%20(2020)%20-%20An%20event-driven%20behavior%20trees%20extension%20to%20facilitate%20non-player%20multi-agent%20coordination%20in%20video%20games.pdf" target="_blank" rel="noopener">An event-driven behavior trees extension to facilitate non-player multi-agent coordination in video games.</a> DOI:10.1016/j.eswa.2020.113457.</p>
+<p>所以你知道为什么一只羊不会停下吃草抬头望着你了吗？</p>
+</div></div><!--.post-main.post-comment--><div id="gitalk-container"></div><link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css"><script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script><script>const gitalk = new Gitalk({
+    clientID: '1b4c00731894d12d4568',
+    clientSecret: '1fa321199cc198f80203716d073c8f2ff2dec849',
+    repo: 'blog',
+    owner: 'IzzelAliz',
+    admin: ['IzzelAliz'],
+    id: location.pathname,
+    distractionFreeMode: false,
+    proxy: 'https://blog-api.izzel.io/?https://github.com/login/oauth/access_token'
+})
+gitalk.render('gitalk-container')</script><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>

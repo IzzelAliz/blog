@@ -1,0 +1,87 @@
+<!DOCTYPE html><html><head><meta name="generator" content="Hexo 3.9.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description"><title>聊聊 Java 的 mlvm | IzzelAliz's Blog</title><link rel="stylesheet" type="text/css" href="/css/normalize.css"><link rel="stylesheet" type="text/css" href="/css/highlight.css"><link rel="stylesheet" type="text/css" href="/css/font.css"><link rel="stylesheet" type="text/css" href="/css/noise.css"><link rel="stylesheet" type="text/css" href="/custom.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/font-awesome@4.5.0/css/font-awesome.min.css"><link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css"><script src="//cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script><script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="alternate" type="application/atom+xml" href="/atom.xml"></head><body><header class="wrapper header"><div class="container blog-title"><a class="title" id="logo" href="/.">IzzelAliz's Blog</a></div></header><article class="wrapper"><div class="post-main"><div class="nav"><nav class="container"><a class="sidebar-nav-item active" href="/">Home</a><a class="sidebar-nav-item" href="https://wiki.izzel.io/s/inside-wardrobe">StagingArea</a><a class="sidebar-nav-item" href="/friends">Friends</a><a class="sidebar-nav-item" href="/about">About</a><a class="sidebar-nav-item" href="/archives">Posts</a></nav><div class="container post-meta"><div class="post-time">2022-12-05</div></div></div><div class="container post-header"><h1>聊聊 Java 的 mlvm</h1></div><div class="container post-toc"><details class="toc"><summary class="toc-accordion">ToC</summary><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#达芬奇的直升机"><span class="toc-number">1.</span> <span class="toc-text">达芬奇的直升机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#动态调用"><span class="toc-number">2.</span> <span class="toc-text">动态调用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#可是动态调用呢？"><span class="toc-number">2.1.</span> <span class="toc-text">可是动态调用呢？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#轻量方法对象"><span class="toc-number">3.</span> <span class="toc-text">轻量方法对象</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#LambdaForm-另一个-JIT？"><span class="toc-number">3.1.</span> <span class="toc-text">LambdaForm - 另一个 JIT？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#轻量字节码加载"><span class="toc-number">4.</span> <span class="toc-text">轻量字节码加载</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#接口注入"><span class="toc-number">5.</span> <span class="toc-text">接口注入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Continuations"><span class="toc-number">6.</span> <span class="toc-text">Continuations</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#尾递归"><span class="toc-number">7.</span> <span class="toc-text">尾递归</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#元组和值类型"><span class="toc-number">8.</span> <span class="toc-text">元组和值类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#后记"><span class="toc-number">9.</span> <span class="toc-text">后记</span></a></li></ol></details></div><div class="container post-content"><p>这可不是 Graal VM …</p>
+<hr>
+<p>你听说过这些东西吗：</p>
+<ul>
+<li>MethodHandle</li>
+<li>invokedynamic</li>
+<li>Continuation</li>
+<li>值类型</li>
+<li>…</li>
+</ul>
+<h2 id="达芬奇的直升机"><a href="#达芬奇的直升机" class="headerlink" title="达芬奇的直升机"></a>达芬奇的直升机</h2><p>上面的东西大多都是在 Java 7 出现的，也是 <a href="https://openjdk.org/projects/mlvm/" target="_blank" rel="noopener">mlvm 项目</a>的主要产出，意图打造一个可以允许多种语言的虚拟机。这个项目又被称为 the Da Vinci Machine Project。</p>
+<p><img src="helicopter.jpg" alt></p>
+<p>这张图就是出自达芬奇，已经快有 600 年的历史，而它描述的自然是一个直升机的设想。</p>
+<p>mlvm 项目的历史也超过十年了。在 2009 年，mlvm 项目展现了雄伟的野心：</p>
+<h2 id="动态调用"><a href="#动态调用" class="headerlink" title="动态调用"></a>动态调用</h2><p>动态调用也就是 Dynamic Invocation，已经在 Java 7 中很好地实现了 —— <code>invokedynamic</code> 指令。</p>
+<p>这条指令，不同于已存在的四个指令，是允许动态调用的，同时也包含了其他的许多好处，比如消除了 int 这样的原始类型装箱拆箱的消耗。</p>
+<p>它的动态调用允许 Java 代码更改某处调用点（调用点，当然就是 <code>CallSite</code>）实际调用的方法，就像写入一个字段一样轻松简单。而这里“实际调用的方法”，就是下面的轻量方法对象。</p>
+<h3 id="可是动态调用呢？"><a href="#可是动态调用呢？" class="headerlink" title="可是动态调用呢？"></a>可是动态调用呢？</h3><p>在本文写作时（Java 19 已发布），Java 本身不带有任何涉及动态调用的代码。虽说如此，Java 中还是有不少地方使用到了 <code>invokedynamic</code>。</p>
+<p>Lambda 表达式中，<code>invokedynamic</code> 指令用于生成接口的实现类。</p>
+<p>从 Java 9 开始，<code>invokedynamic</code> 用于实现字符串拼接。</p>
+<p>从 Java 16 开始，Record 类中 <code>invokedynamic</code> 用于生成 <code>toString</code>（该实现其实很不好）、<code>equals</code>、<code>hashCode</code> 这样的方法。</p>
+<p>从 Java 17 开始，switch 表达式也使用 <code>invokedynamic</code> 生成 switch table。</p>
+<p>除了 Lambda 表达式的实现之外，其他几个调用的 MH 都是使用 <code>MethodHandles</code> 中的方法进行组合而实现。</p>
+<p>以上内容都不是动态调用，反而倒更像是某种意义上 Java 的宏了。</p>
+<h2 id="轻量方法对象"><a href="#轻量方法对象" class="headerlink" title="轻量方法对象"></a>轻量方法对象</h2><p>Lightweight method objects，在 Java 7 中最终作为 <code>MethodHandle</code> 落地；更准确地描述可能是“一段代码”。</p>
+<p>提到 <code>MethodHandle</code> 或者 MH，大多数人和互联网上的文章都会拿来和反射 API 进行比较，这里自然也拿来比较一下。</p>
+<p>对于方法调用，反射 API 是有设计缺陷的：</p>
+<ul>
+<li><code>getMethod</code>、<code>getField</code> 这样的操作，并不允许提供方法返回值或者字段类型作为参数进行查询 —— 分明 JVM 中存在这样的机制，更别说 JVM 允许名称和参数列表项目而返回值不同的方法多个存在了；</li>
+<li>什么是 <code>getMethod</code>，什么又是 <code>getDeclaredMethod</code> 呢？在语言层面和 JVM 层面，只有“可访问”和“不可访问”的区别，反射 API（很长一段时间）没有区别可访问的能力；</li>
+<li>更别说 <code>Method#invoke</code> 的时候的装箱拆箱、可变长参数的数组创建、调用时权限检查等性能问题了。</li>
+</ul>
+<p>Java 7 出现的 MH 解决了上面的问题，尽管它相比反射 API 缺少了很多功能。与反射 API 相比，MH 更符合一个动态调用 API 的定位：</p>
+<ul>
+<li>字节码怎么写，<code>Lookup#findXXX</code> 就怎么写；</li>
+<li>语义和字节码中这里能访问的东西，MH 就能访问；语义不能的，MH 就不能；</li>
+<li>字节码里怎么调用，MH 就怎么调用，不会多装箱，或者把抛出的一场包装一层 <code>InvocationTargetException</code>；</li>
+<li>直接调用什么性能，MH 调用就是什么性能（一定条件下）。</li>
+</ul>
+<p>当然，MH 缺少了调用的方法名称、声明的类之类的信息，只保存了调用方法的类型，所以称之为轻量方法对象。</p>
+<h3 id="LambdaForm-另一个-JIT？"><a href="#LambdaForm-另一个-JIT？" class="headerlink" title="LambdaForm - 另一个 JIT？"></a>LambdaForm - 另一个 JIT？</h3><p>MH 不只是某种反射的替代品。在 <a href="https://openjdk.org/jeps/160" target="_blank" rel="noopener">JEP 160</a> 中 JDK 引入了 LambdaForm，用于表达 MethodHandle。</p>
+<p>LambdaForm 是一系列方法调用、若干个参数和临时变量的“一段代码”。为了简化表达，这些参数和变量只有五种类型，也就是引用类型和四个基础类型（<code>int</code>、<code>long</code>、<code>float</code>、<code>double</code>）和 <code>void</code>。</p>
+<p>以 LambdaForm 的文档为例：</p>
+<pre><code>(a0:J)=&gt;{ a0 }
+    == identity(long)
+(a0:I)=&gt;{ t1:V = System.out#println(a0); void }
+    == System.out#println(int)
+(a0:L)=&gt;{ t1:V = System.out#println(a0); a0 }
+    == identity, with printing side-effect
+(a0:L, a1:L)=&gt;{ t2:L = BoundMethodHandle#argument(a0);
+                t3:L = Class#cast(t2,a1); t3 }
+    == invoker for identity method handle which performs cast</code></pre><p>LambdaForm 设计为可以轻易地翻译到字节码和 JIT IR，可以看作是字节码的抽象表达形式。</p>
+<h2 id="轻量字节码加载"><a href="#轻量字节码加载" class="headerlink" title="轻量字节码加载"></a>轻量字节码加载</h2><p>Lightweight bytecode loading，可能你从来没有见过？</p>
+<p>Java 15 包括了 <a href="https://openjdk.org/jeps/371" target="_blank" rel="noopener">JEP 371: Hidden Classes</a>，或者说是隐藏类；而在 Java 15 之前，这样的功能通过 <code>Unsafe#defineAnonymousClass</code> 实现。</p>
+<p>这个功能用于生成一些轻量的、用于调用其他方法的没有名称的类。</p>
+<p>如果是调用方法的话，是不是和 MH 非常类似？它与 MH 最大的区别是，它是类，所以可以有字段，被用于 Lambda 表达式中的变量捕获。</p>
+<h2 id="接口注入"><a href="#接口注入" class="headerlink" title="接口注入"></a>接口注入</h2><p>Interface injection，接口注入，动态语言中通常有这样的功能，可惜 JVM 尚且没有。</p>
+<p>这个设计的原型描述<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>是相对保守的，注入接口后不会影响已有类的解析和调用，但是 <code>instanceof</code> 和类型转换会反馈注入的接口。</p>
+<p>运行时接口注入虽然没有被 JDK 加入，但是 DCEVM 项目（现在是 JetbrainsRuntime）可以实现这一功能。<a href="https://github.com/SpongePowered/Mixin" target="_blank" rel="noopener">Mixin</a> 这样的项目也可以在类加载的时候注入接口。</p>
+<hr>
+<p><a href="#Continuations">什么是 Continuation？</a></p>
+<h2 id="Continuations"><a href="#Continuations" class="headerlink" title="Continuations"></a>Continuations</h2><p><a href="https://izzel.io/2022/09/04/what-color-is-your-function">Continuation</a> 就是程序后面的部分，或者说剩下的部分。</p>
+<pre class="line-numbers language-java"><code class="language-java">System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"ザ・ワールド 時よ止まれ！"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Thread<span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">5000</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"ザ・ワールド 時は動き出す"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>在执行到 <code>Thread#sleep</code> 时，自然最后一个 <code>System.out.println</code> 是当前的 Continuation。而将 Continuation 明确表示出来（比如一个 Lambda 表达式），并把它传递（passing）到其他地方的代码，就叫 continuation-passing style。</p>
+<pre class="line-numbers language-java"><code class="language-java">System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"ザ・ワールド 時よ止まれ！"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Runnable continuation <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> System<span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"ザ・ワールド 時は動き出す"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+CompletableFuture<span class="token punctuation">.</span><span class="token function">delayedExecutor</span><span class="token punctuation">(</span><span class="token number">5000</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span>continuation<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>而不将 Continuation 明确表现出来，而是让 JVM 管理，就是这个项目的目标。</p>
+<p>尽管 mlvm 项目的 continuation 并没有最终实现，但是另一个项目 loom 最终在 Java 19 实现了 JVM 上的 Continuation 和<a href="https://openjdk.org/jeps/425" target="_blank" rel="noopener">虚拟线程</a>。</p>
+<h2 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h2><p>Tail calls/tail recursion，也就是尾调用、尾递归，在函数式编程中更为常见。对于尾递归，我们可以借用 Continuation 的概念，定义为“方法最后的调用的 Continuation 是其自身”。</p>
+<p>mlvm 项目对于尾递归的实现是添加一系列新指令，比如 <code>tailcallinvokestatic</code> 这样。当然，这样的实现最终没有落地。</p>
+<p>loom 项目似乎也会提供对于尾调用的支持，虽然目前还没有。</p>
+<h2 id="元组和值类型"><a href="#元组和值类型" class="headerlink" title="元组和值类型"></a>元组和值类型</h2><p>元组（Tuple），可以简单的理解为几个东西的组合，好比一个坐标 <code>Vector3i</code> 就是 <code>(x: int, y: int, z: int)</code> 这样的元组。</p>
+<p>值类型，是相对于引用类型而言的概念，这样的类型在 JVM 中直接保存在栈上，如 <code>int</code>、<code>long</code> 一样。</p>
+<p>在 mlvm 项目中，值类型会被实现为类似 <code>{LBlockPos;III}</code> 这样的类型签名，通过 <code>vaccess getfield</code> 这样的指令读取字段，并且值类型是可变的。在现在看来，这样的设计自然是复杂且不好的。</p>
+<p>值类型自然在 mlvm 项目没有落地。随后的 <a href="https://openjdk.org/projects/valhalla" target="_blank" rel="noopener">valhalla 项目</a>接过了<a href="https://openjdk.org/jeps/401" target="_blank" rel="noopener">值类型</a>的担子，并且同时准备提供泛型特化的特性。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>mlvm 项目未尝不是某种伊卡洛斯的坠落，它的目标在十年后仍在进行。</p>
+<p>虽然 Graal 项目本身的目标是用 Java 编写 compiler，却实现了 mlvm 设想的 Multi Language VM。</p>
+<p>写这篇文章的想法来自于我的一个项目 <a href="https://github.com/IzzelAliz/Arcturus" target="_blank" rel="noopener">Arcturus</a>，其实现了 <a href="https://openjdk.org/jeps/303" target="_blank" rel="noopener">JEP 303</a> 和 Java 上的尾递归消除。</p>
+<div id="footnotes"><hr><div id="footnotelist"><ol style="list-style:none; padding-left: 0;"><li id="fn:1"><span style="display: inline-block; vertical-align: top; padding-right: 10px;">1.</span><span style="display: inline-block; vertical-align: top;"><a href="https://web.archive.org/web/20160922185657/https://blogs.oracle.com/jrose/entry/interface_injection_in_the_vm" target="_blank" rel="noopener">blogs.oracle.com/jrose/entry/interface_injection_in_the_vm</a></span><a href="#fnref:1" rev="footnote"> ↩</a></li></ol></div></div></div></div><!--.post-main.post-comment--><footer class="footer wrapper"><div class="social"><a href="https://github.com/IzzelAliz" target="_blank"><i class="fa fa-github"></i></a><a href="https://keyserver.ubuntu.com/pks/lookup?op=vindex&amp;search=0x17f667c4a12db582" target="_blank"><i class="fa fa-key"></i></a><a href="/atom.xml" target="_blank"><i class="fa fa-rss"></i></a></div><div class="footer-content">© 2025 <a href="/" rel="nofollow">IzzelAliz</a></div></footer></article><script>(function ($) {
+    !$ ? _ : $(".container.post-content img[src]").each(function (i, v) {
+        $(v).replaceWith($('<a data-fancybox="i" href="' + v.src + '">' + v.outerHTML + '</a>'));
+    });
+})(jQuery);
+</script></body></html>
